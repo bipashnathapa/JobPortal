@@ -1,0 +1,651 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.new-dash-container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #e8e8e8 0%, #f5f5f5 50%, #e8e8e8 100%);
+  font-family: 'Inter', sans-serif;
+  padding: 20px;
+}
+
+/* Navigation Bar */
+.dash-navbar {
+  background: #000;
+  border-radius: 50px;
+  padding: 15px 40px;
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  max-width: 500px;
+  margin: 0 auto 40px auto;
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+  border-radius: 25px;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn.active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Hero Section */
+.hero-section {
+  background: #000;
+  color: #fff;
+  padding: 60px 40px;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  margin-bottom: 40px;
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  letter-spacing: -1px;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 40px;
+  max-width: 600px;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: #f5f5f5;
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+/* Stats Section */
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 900px;
+  margin: 0 auto 40px auto;
+  padding: 40px;
+  background: #3a3a3a;
+  border-radius: 40px;
+}
+
+.stat-card {
+  background: #fff;
+  padding: 50px 40px;
+  border-radius: 30px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 10px;
+}
+
+.stat-label {
+  font-size: 1.1rem;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Listings Section */
+.listings-section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px 40px 20px;
+}
+
+.listings-header {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.loading-text, .no-listings {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #666;
+  padding: 40px;
+  background: #fff;
+  border-radius: 20px;
+}
+
+.listings-grid {
+  display: grid;
+  gap: 25px;
+}
+
+/* Listing Card */
+.listing-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.listing-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+}
+
+.listing-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 15px;
+}
+
+.listing-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+}
+
+.listing-type {
+  background: #000;
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.listing-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 1rem;
+  color: #000;
+  font-weight: 500;
+}
+
+.listing-description {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
+.listing-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.view-btn, .delete-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 25px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.view-btn {
+  background: #000;
+  color: #fff;
+}
+
+.view-btn:hover {
+  background: #333;
+  transform: translateY(-2px);
+}
+
+.delete-btn {
+  background: #fff;
+  color: #ff4444;
+  border: 2px solid #ff4444;
+}
+
+.delete-btn:hover {
+  background: #ff4444;
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* Add these to your existing NewEmployerDashboard.css */
+
+.notifications-section {
+    max-width: 900px;
+    margin: 0 auto 30px auto;
+  }
+  
+  .notification-badge {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    color: #856404;
+    padding: 15px 25px;
+    border-radius: 15px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-align: center;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+  
+  .applications-section {
+    max-width: 900px;
+    margin: 0 auto 40px auto;
+    padding: 0 20px;
+  }
+  
+  .section-header {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 25px;
+    text-align: center;
+  }
+  
+  .no-applications {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #666;
+    padding: 40px;
+    background: #fff;
+    border-radius: 20px;
+  }
+  
+  .applications-grid {
+    display: grid;
+    gap: 20px;
+  }
+  
+  .application-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 25px;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s ease;
+  }
+  
+  .application-card:hover {
+    border-color: #000;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .application-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+  }
+  
+  .applicant-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #000;
+    margin: 0 0 5px 0;
+  }
+  
+  .application-job {
+    font-size: 0.95rem;
+    color: #666;
+    font-weight: 500;
+    margin: 0;
+  }
+  
+  .status-badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  
+  .status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+  }
+  
+  .status-badge.accepted {
+    background: #d4edda;
+    color: #155724;
+  }
+  
+  .status-badge.rejected {
+    background: #f8d7da;
+    color: #721c24;
+  }
+  
+  .application-info {
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 10px;
+  }
+  
+  .application-info p {
+    margin: 8px 0;
+    font-size: 0.95rem;
+    color: #333;
+  }
+  
+  .view-application-btn {
+    width: 100%;
+    padding: 12px;
+    background: #000;
+    color: #fff;
+    border: none;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .view-application-btn:hover {
+    background: #333;
+  }
+/* Responsive Design */
+@media (max-width: 768px) {
+  .new-dash-container {
+    padding: 15px;
+  }
+
+  .dash-navbar {
+    padding: 12px 20px;
+    gap: 30px;
+    max-width: 100%;
+  }
+
+  .nav-btn {
+    font-size: 14px;
+  }
+
+  .hero-section {
+    padding: 40px 25px;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .stats-section {
+    padding: 25px;
+    gap: 20px;
+  }
+
+  .stat-card {
+    padding: 35px 25px;
+  }
+
+  .stat-number {
+    font-size: 2rem;
+  }
+
+  .stat-label {
+    font-size: 1rem;
+  }
+
+  .listings-header {
+    font-size: 1.5rem;
+  }
+
+  .listing-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .listing-details {
+    grid-template-columns: 1fr;
+  }
+
+  .listing-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.75rem;
+  }
+
+  .dash-navbar {
+    gap: 15px;
+  }
+
+  .nav-btn {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+}
+
+/* Notification styles for employer */
+.notification-card-emp {
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    border-left: 4px solid #000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    margin-bottom: 12px;
+  }
+  
+  .notification-card-emp.unread {
+    animation: slideIn 0.3s ease;
+    background: linear-gradient(to right, #fff3cd 0%, #fff 15%);
+  }
+  
+  .notification-card-emp.read {
+    opacity: 0.7;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  .notification-content-emp {
+    flex: 1;
+  }
+  
+  .notification-header-emp {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  
+  .notification-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #000;
+    margin: 0;
+  }
+  
+  .notification-message-emp {
+    font-size: 0.95rem;
+    color: #333;
+    margin: 0 0 5px 0;
+  }
+  
+  .notification-time-emp {
+    font-size: 0.8rem;
+    color: #999;
+  }
+  
+  .mark-read-btn-emp {
+    background: #000;
+    color: #fff;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+  }
+  
+  .mark-read-btn-emp:hover {
+    background: #333;
+    transform: scale(1.1);
+  }
+  
+  .show-more-btn-emp {
+    display: block;
+    margin: 20px auto;
+    padding: 12px 30px;
+    background: #fff;
+    color: #000;
+    border: 2px solid #e0e0e0;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .show-more-btn-emp:hover {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+    transform: translateY(-2px);
+  }
+  
+  .read-title {
+    color: #666;
+    font-size: 1.5rem;
+    margin-top: 30px;
+  }
+  
+  .notifications-list.read {
+    opacity: 0.8;
+  }
+
+  /* Styling for the card when expired */
+.listing-card.expired-card {
+    border-left: 5px solid #d1d1d1; /* Grey border instead of your primary color */
+    background-color: #fafafa;
+    opacity: 0.8; /* Slightly faded */
+  }
+  
+  /* The Red Expired Tag */
+  .status-tag.expired {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: 1px solid #ffcdd2;
+  }
+  
+  /* Highlight the deadline text in red if passed */
+  .deadline-passed {
+    color: #d32f2f;
+    font-weight: bold;
+  }
+  
+  /* Keep action buttons fully opaque so they are still easy to click */
+  .expired-card .listing-actions {
+    opacity: 1;
+  }
+  
+  .expired-card:hover {
+    opacity: 1; /* Restore focus when hovering */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }

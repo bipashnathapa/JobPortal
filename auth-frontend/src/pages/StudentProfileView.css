@@ -1,0 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Metrophobic&display=swap');
+
+.profile-view-bg {
+  min-height: 100vh;
+  width: 100vw;
+  background: #0b0b0b;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #222;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 33px;
+  border: 1px solid #333;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: #2a2a2a;
+  border-color: #CAEEC2;
+}
+
+.profile-view-header {
+  font-family: 'Metrophobic', sans-serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.profile-view-card {
+  width: 100%;
+  max-width: 600px;
+  background: #151515;
+  border-radius: 30px;
+  padding: 40px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  border: 1px solid #252525;
+}
+
+.profile-view-picture-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.profile-view-picture {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #CAEEC2;
+  box-shadow: 0 4px 16px rgba(202, 238, 194, 0.3);
+}
+
+.profile-info-section {
+  margin-bottom: 30px;
+}
+
+.info-row {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #252525;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row label {
+  display: block;
+  color: #CAEEC2;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.info-row p {
+  color: #fff;
+  font-size: 15px;
+  margin: 0;
+  word-wrap: break-word;
+}
+
+.close-button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 33px;
+  border: none;
+  background: white;
+  color: black;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-button:hover {
+  background: #CAEEC2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(202, 238, 194, 0.4);
+}
+
+@media (max-width: 768px) {
+  .profile-view-bg {
+    padding: 30px 15px;
+  }
+
+  .profile-view-header {
+    font-size: 1.6rem;
+    margin-bottom: 25px;
+  }
+
+  .profile-view-card {
+    padding: 30px 25px;
+  }
+
+  .profile-view-picture {
+    width: 120px;
+    height: 120px;
+  }
+}

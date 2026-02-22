@@ -1,0 +1,73 @@
+/* Full screen background */
+.auth-bg {
+    position: fixed;       /* fills the viewport */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+  
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    z-index: -1;
+  }
+  
+  /* Black glass card */
+  .auth-card {
+    width: 400px;         /* card width */
+    max-width: 90%;       /* responsive for small screens */
+    padding: 40px 30px;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.7);
+  
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  
+    color: white;
+    text-align: center;
+  }
+  
+  /* Card heading */
+  .auth-card h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+  }
+  
+  /* Inputs */
+  .auth-card input {
+    width: 100%;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 15px;
+    outline: none;
+  }
+  
+  /* Button */
+  .auth-card button {
+    width: 100%;
+    padding: 14px;
+    background: #6c5ce7;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  
+  .auth-card button:hover {
+    background: #7d6cff;
+  }
+  
