@@ -50,3 +50,24 @@ export const updateStudentProfile = async (formData) => {
     return { error: "Network error" };
   }
 };
+
+// CV rating / feedback (chatbot-style)
+export const rateCV = async (formData) => {
+  try {
+    const token = localStorage.getItem("access");
+    if (!token) return { error: "No access token found" };
+
+    const res = await fetch(`${BASE_URL}/rate-cv/`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: data.error || "Request failed" };
+    return data;
+  } catch (err) {
+    console.error(err);
+    return { error: "Network error" };
+  }
+};

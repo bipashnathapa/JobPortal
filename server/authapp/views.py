@@ -3,8 +3,19 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
-from server.mongo import users_collection, listings_collection, applications_collection, notifications_collection
-from .utils import send_verification_email
+from server.mongo import (
+    users_collection,
+    listings_collection,
+    applications_collection,
+    notifications_collection,
+    interviews_collection,
+)
+from .utils import (
+    send_verification_email,
+    send_interview_proposed_email,
+    send_interview_response_email,
+)
+from .cv_rating import extract_text_from_pdf, get_cv_feedback
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -32,7 +43,6 @@ def get_user_from_token(request):
         return None
 
 
-
 # AUTH
 
 
@@ -56,13 +66,25 @@ def register(request):
 
     hashed_pw = hashlib.sha256(password.encode()).hexdigest()
 
+
+    profile = {}
+    if role == "student":
+        profile = {
+            "full_name": data.get("fullName", ""),
+            "university": data.get("university", ""),
+        }
+    elif role == "employer":
+        profile = {
+            "company_name": data.get("companyName", ""),
+        }
+
     users_collection.insert_one({
         "username": username,
         "password": hashed_pw,
         "role": role,
         "email": email,
         "is_verified": False,
-        "profile": {}
+        "profile": profile
     })
 
     send_verification_email(username, email)
@@ -105,6 +127,41 @@ def login(request):
     })
 
 
+#  CV RATING (simple: rate + suggestions via Groq)
+@api_view(["POST"])
+@parser_classes([MultiPartParser, FormParser])
+def rate_cv(request):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user.get("role") != "student":
+        return Response({"error": "Only students can use CV feedback"}, status=403)
+
+    cv_text = (request.data.get("text") or "").strip()
+    if "cv" in request.FILES:
+        f = request.FILES["cv"]
+        if not f.name.lower().endswith(".pdf"):
+            return Response({"error": "CV must be a PDF"}, status=400)
+        if f.size > 5 * 1024 * 1024:
+            return Response({"error": "PDF must be under 5MB"}, status=400)
+        extracted = extract_text_from_pdf(f)
+        cv_text = extracted if not cv_text else cv_text + "\n\n" + extracted
+
+    if not cv_text or len(cv_text) < 30:
+        return Response({"error": "Provide a PDF and/or paste CV text (at least a few lines)."}, status=400)
+
+    result = get_cv_feedback(cv_text)
+    if result.get("error") and result["error"] != "GROQ_NOT_CONFIGURED":
+        err = result["error"] if getattr(settings, "DEBUG", False) else "CV analysis failed. Try again."
+        return Response({"error": err}, status=500)
+
+    return Response({
+        "rating": result["rating"],
+        "suggestions": result["suggestions"],
+        "summary": result["summary"],
+        "message": result["summary"] if result.get("error") == "GROQ_NOT_CONFIGURED" else "Here’s your CV feedback.",
+    })
+
 
 #  STUDENT PROFILE
 
@@ -125,9 +182,10 @@ def get_profile(request):
 
     profile = db_user.get("profile", {})
 
+
     return Response({
         "profile": {
-            "full_name": profile.get("full_name", ""),
+            "full_name": profile.get("full_name") or profile.get("fullName", ""),
             "university": profile.get("university", ""),
             "phone": profile.get("phone", ""),
             "bio": profile.get("bio", ""),
@@ -195,9 +253,9 @@ def update_profile(request):
     })
 
 
-# ================================
-# 👀 VIEW STUDENT PROFILE (for employers)
-# ================================
+
+ #VIEW STUDENT PROFILE (for employers)
+
 
 @api_view(["GET"])
 def view_student_profile(request, username):
@@ -217,10 +275,11 @@ def view_student_profile(request, username):
 
     profile = db_user.get("profile", {})
 
+    # Support both snake_case (new) and camelCase (legacy)
     return Response({
         "profile": {
             "username": username,
-            "full_name": profile.get("full_name", ""),
+            "full_name": profile.get("full_name") or profile.get("fullName", ""),
             "university": profile.get("university", ""),
             "phone": profile.get("phone", ""),
             "bio": profile.get("bio", ""),
@@ -230,9 +289,9 @@ def view_student_profile(request, username):
     })
 
 
-# ================================
-# 🏢 EMPLOYER PROFILE
-# ================================
+
+# EMPLOYER PROFILE
+
 
 @api_view(["GET"])
 def get_employer_profile(request):
@@ -250,9 +309,10 @@ def get_employer_profile(request):
 
     profile = db_user.get("profile", {})
 
+    
     return Response({
         "profile": {
-            "company_name": profile.get("company_name", ""),
+            "company_name": profile.get("company_name") or profile.get("companyName", ""),
             "industry": profile.get("industry", ""),
             "location": profile.get("location", ""),
             "company_size": profile.get("company_size", ""),
@@ -322,9 +382,9 @@ def update_employer_profile(request):
     })
 
 
-# ================================
+
 # EMAIL VERIFICATION
-# ================================
+
 
 @api_view(["GET"])
 def verify_email(request):
@@ -348,9 +408,9 @@ def verify_email(request):
         return Response({"error": "Invalid token"}, status=400)
 
 
-# ================================
+
 # DASHBOARDS
-# ================================
+
 
 def home(request):
     return render(request, "authapp/index.html")
@@ -361,9 +421,9 @@ def student_dashboard(request):
 def employer_dashboard(request):
     return render(request, "authapp/employer_dashboard.html")
 
-# ================================
-# 📋 JOB LISTINGS
-# ================================
+
+# JOB LISTINGS
+
 
 @api_view(["POST"])
 def post_listing(request):
@@ -532,6 +592,108 @@ def get_all_listings(request):
     return Response({"listings": listings})
 
 @api_view(["POST"])
+def save_job(request, listing_id):
+    """Save a listing for the logged-in student"""
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+
+    if user["role"] != "student":
+        return Response({"error": "Only students can save jobs"}, status=403)
+
+    from bson.objectid import ObjectId
+
+    try:
+        listing = listings_collection.find_one({"_id": ObjectId(listing_id)})
+    except Exception:
+        return Response({"error": "Invalid listing ID"}, status=400)
+
+    if not listing:
+        return Response({"error": "Listing not found"}, status=404)
+
+    users_collection.update_one(
+        {"username": user["username"], "role": "student"},
+        {"$addToSet": {"saved_jobs": listing_id}}
+    )
+
+    return Response({"message": "Job saved"})
+
+
+@api_view(["POST"])
+def unsave_job(request, listing_id):
+    """Remove a saved listing for the logged-in student"""
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+
+    if user["role"] != "student":
+        return Response({"error": "Only students can unsave jobs"}, status=403)
+
+    users_collection.update_one(
+        {"username": user["username"], "role": "student"},
+        {"$pull": {"saved_jobs": listing_id}}
+    )
+
+    return Response({"message": "Job removed from saved jobs"})
+
+
+@api_view(["GET"])
+def get_saved_jobs(request):
+    """Get all saved listings for the logged-in student"""
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+
+    if user["role"] != "student":
+        return Response({"error": "Only students can view saved jobs"}, status=403)
+
+    student = users_collection.find_one(
+        {"username": user["username"], "role": "student"},
+        {"saved_jobs": 1}
+    )
+
+    saved_ids = student.get("saved_jobs", []) if student else []
+    if not saved_ids:
+        return Response({"saved_jobs": [], "saved_count": 0})
+
+    from bson.objectid import ObjectId
+    valid_object_ids = []
+    id_order = []
+    for listing_id in saved_ids:
+        try:
+            oid = ObjectId(listing_id)
+            valid_object_ids.append(oid)
+            id_order.append(str(oid))
+        except Exception:
+            continue
+
+    if not valid_object_ids:
+        return Response({"saved_jobs": [], "saved_count": 0})
+
+    listings = list(
+        listings_collection.find({"_id": {"$in": valid_object_ids}, "is_active": True})
+    )
+
+    listing_map = {}
+    for listing in listings:
+        listing["_id"] = str(listing["_id"])
+
+        employer = users_collection.find_one({
+            "username": listing["employer_username"],
+            "role": "employer"
+        })
+
+        if employer and employer.get("profile"):
+            listing["company_name"] = employer["profile"].get("company_name", "Unknown Company")
+        else:
+            listing["company_name"] = "Unknown Company"
+
+        listing_map[listing["_id"]] = listing
+
+    ordered_saved_jobs = [listing_map[lid] for lid in id_order if lid in listing_map]
+    return Response({"saved_jobs": ordered_saved_jobs, "saved_count": len(ordered_saved_jobs)})
+
+@api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])
 def submit_application(request, listing_id):
     """Submit a job application"""
@@ -614,6 +776,260 @@ def submit_application(request, listing_id):
 
 
 
+
+
+@api_view(["POST"])
+def propose_interview(request, application_id):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user["role"] != "employer":
+        return Response({"error": "Only employers can propose interviews"}, status=403)
+
+    from bson.objectid import ObjectId
+
+    try:
+        application = applications_collection.find_one({"_id": ObjectId(application_id)})
+    except Exception:
+        return Response({"error": "Invalid application ID"}, status=400)
+
+    if not application:
+        return Response({"error": "Application not found"}, status=404)
+    if application.get("employer_username") != user["username"]:
+        return Response({"error": "Not authorized for this application"}, status=403)
+    if application.get("status") != "accepted":
+        return Response({"error": "Interview can only be scheduled for accepted applications"}, status=400)
+
+    slot_start_raw = request.data.get("slot_start", "")
+    slot_end_raw = request.data.get("slot_end", "")
+    meeting_link = request.data.get("meeting_link", "").strip()
+    interview_location = request.data.get("location", "").strip()
+    notes = request.data.get("notes", "").strip()
+
+    if not slot_start_raw or not slot_end_raw:
+        return Response({"error": "slot_start and slot_end are required"}, status=400)
+
+    try:
+        slot_start_dt = datetime.fromisoformat(slot_start_raw)
+        slot_end_dt = datetime.fromisoformat(slot_end_raw)
+    except Exception:
+        return Response({"error": "Invalid datetime format"}, status=400)
+
+    if slot_end_dt <= slot_start_dt:
+        return Response({"error": "slot_end must be after slot_start"}, status=400)
+    if slot_start_dt <= datetime.utcnow():
+        return Response({"error": "Interview slot must be in the future"}, status=400)
+
+    active_interview = interviews_collection.find_one({
+        "application_id": application_id,
+        "status": {"$in": ["proposed", "confirmed"]},
+    })
+    if active_interview:
+        return Response({"error": "An active interview already exists for this application"}, status=400)
+
+    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    interview_doc = {
+        "application_id": application_id,
+        "listing_id": application.get("listing_id"),
+        "job_title": application.get("job_title", ""),
+        "employer_username": user["username"],
+        "student_username": application.get("student_username", ""),
+        "student_full_name": application.get("full_name", "") or application.get("student_username", ""),
+        "slot_start": slot_start_dt.isoformat(),
+        "slot_end": slot_end_dt.isoformat(),
+        "meeting_link": meeting_link,
+        "location": interview_location,
+        "notes": notes,
+        "status": "proposed",
+        "created_at": now_str,
+        "updated_at": now_str,
+    }
+
+    result = interviews_collection.insert_one(interview_doc)
+
+    notes_message = f" Notes: {notes}" if notes else ""
+    notifications_collection.insert_one({
+        "student_username": application.get("student_username", ""),
+        "type": "interview_proposed",
+        "job_title": application.get("job_title", ""),
+        "message": f"Interview scheduled for {application.get('job_title', 'your application')}. Please confirm or decline.{notes_message}",
+        "created_at": now_str,
+        "read": False,
+    })
+
+    student_user = users_collection.find_one({
+        "username": application.get("student_username", ""),
+        "role": "student",
+    })
+    if student_user and student_user.get("email"):
+        send_interview_proposed_email(
+            student_user["email"],
+            application.get("student_username", ""),
+            application.get("job_title", ""),
+            interview_doc["slot_start"],
+            interview_doc["slot_end"],
+            meeting_link,
+            notes,
+        )
+
+    return Response({"message": "Interview proposed successfully", "interview_id": str(result.inserted_id)})
+
+
+@api_view(["GET"])
+def get_student_interviews(request):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user["role"] != "student":
+        return Response({"error": "Only students can view interviews"}, status=403)
+
+    interviews = list(
+        interviews_collection.find({"student_username": user["username"]}).sort("slot_start", 1)
+    )
+    for interview in interviews:
+        interview["_id"] = str(interview["_id"])
+    return Response({"interviews": interviews})
+
+
+@api_view(["GET"])
+def get_employer_interviews(request):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user["role"] != "employer":
+        return Response({"error": "Only employers can view interviews"}, status=403)
+    from bson.objectid import ObjectId
+
+    interviews = list(
+        interviews_collection.find({"employer_username": user["username"]}).sort("slot_start", 1)
+    )
+    for interview in interviews:
+        if not interview.get("student_full_name"):
+            application = applications_collection.find_one(
+                {"_id": ObjectId(interview["application_id"])}
+            ) if interview.get("application_id") else None
+            if application and application.get("full_name"):
+                interview["student_full_name"] = application.get("full_name")
+            else:
+                student = users_collection.find_one(
+                    {"username": interview.get("student_username", ""), "role": "student"}
+                )
+                profile_name = (
+                    student.get("profile", {}).get("full_name")
+                    if student and isinstance(student.get("profile"), dict)
+                    else ""
+                )
+                interview["student_full_name"] = profile_name or interview.get("student_username", "")
+        interview["_id"] = str(interview["_id"])
+    return Response({"interviews": interviews})
+
+
+@api_view(["POST"])
+def confirm_interview(request, interview_id):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user["role"] != "student":
+        return Response({"error": "Only students can confirm interviews"}, status=403)
+
+    from bson.objectid import ObjectId
+
+    try:
+        interview = interviews_collection.find_one({"_id": ObjectId(interview_id)})
+    except Exception:
+        return Response({"error": "Invalid interview ID"}, status=400)
+
+    if not interview:
+        return Response({"error": "Interview not found"}, status=404)
+    if interview.get("student_username") != user["username"]:
+        return Response({"error": "Not authorized for this interview"}, status=403)
+    if interview.get("status") != "proposed":
+        return Response({"error": "Only proposed interviews can be confirmed"}, status=400)
+
+    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    interviews_collection.update_one(
+        {"_id": ObjectId(interview_id)},
+        {"$set": {"status": "confirmed", "updated_at": now_str}},
+    )
+
+    notifications_collection.insert_one({
+        "employer_username": interview.get("employer_username", ""),
+        "type": "interview_confirmed",
+        "student_name": user["username"],
+        "job_title": interview.get("job_title", ""),
+        "message": f"{user['username']} confirmed the interview for {interview.get('job_title', 'the role')}.",
+        "created_at": now_str,
+        "read": False,
+    })
+
+    employer_user = users_collection.find_one({
+        "username": interview.get("employer_username", ""),
+        "role": "employer",
+    })
+    if employer_user and employer_user.get("email"):
+        send_interview_response_email(
+            employer_user["email"],
+            interview.get("employer_username", ""),
+            user["username"],
+            interview.get("job_title", ""),
+            "confirmed",
+        )
+
+    return Response({"message": "Interview confirmed"})
+
+
+@api_view(["POST"])
+def decline_interview(request, interview_id):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user["role"] != "student":
+        return Response({"error": "Only students can decline interviews"}, status=403)
+
+    from bson.objectid import ObjectId
+
+    try:
+        interview = interviews_collection.find_one({"_id": ObjectId(interview_id)})
+    except Exception:
+        return Response({"error": "Invalid interview ID"}, status=400)
+
+    if not interview:
+        return Response({"error": "Interview not found"}, status=404)
+    if interview.get("student_username") != user["username"]:
+        return Response({"error": "Not authorized for this interview"}, status=403)
+    if interview.get("status") != "proposed":
+        return Response({"error": "Only proposed interviews can be declined"}, status=400)
+
+    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    interviews_collection.update_one(
+        {"_id": ObjectId(interview_id)},
+        {"$set": {"status": "declined", "updated_at": now_str}},
+    )
+
+    notifications_collection.insert_one({
+        "employer_username": interview.get("employer_username", ""),
+        "type": "interview_declined",
+        "student_name": user["username"],
+        "job_title": interview.get("job_title", ""),
+        "message": f"{user['username']} declined the interview for {interview.get('job_title', 'the role')}.",
+        "created_at": now_str,
+        "read": False,
+    })
+
+    employer_user = users_collection.find_one({
+        "username": interview.get("employer_username", ""),
+        "role": "employer",
+    })
+    if employer_user and employer_user.get("email"):
+        send_interview_response_email(
+            employer_user["email"],
+            interview.get("employer_username", ""),
+            user["username"],
+            interview.get("job_title", ""),
+            "declined",
+        )
+
+    return Response({"message": "Interview declined"})
 
 @api_view(["GET"])
 def get_employer_notifications(request):
@@ -709,17 +1125,52 @@ def get_student_notifications(request):
         "student_username": user["username"],
         "created_at": {"$lt": seven_days_ago}
     })
-    
-    # Get remaining notifications for this student
-    notifications = list(notifications_collection.find({
-        "student_username": user["username"]
-    }).sort("created_at", -1))
+
+    # Parse pagination query params.
+    try:
+        page = int(request.GET.get("page", 1))
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        page_size = int(request.GET.get("page_size", 8))
+    except (TypeError, ValueError):
+        page_size = 8
+
+    page = max(1, page)
+    page_size = max(1, min(page_size, 50))
+
+    query = {"student_username": user["username"]}
+    total_count = notifications_collection.count_documents(query)
+    total_pages = max(1, (total_count + page_size - 1) // page_size)
+    if page > total_pages:
+        page = total_pages
+
+    skip = (page - 1) * page_size
+
+    # Get paginated notifications for this student.
+    notifications = list(
+        notifications_collection.find(query)
+        .sort("created_at", -1)
+        .skip(skip)
+        .limit(page_size)
+    )
     
     # Convert ObjectId to string
     for notif in notifications:
         notif["_id"] = str(notif["_id"])
-    
-    return Response({"notifications": notifications})
+
+    return Response({
+        "notifications": notifications,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": total_pages,
+            "has_previous": page > 1,
+            "has_next": page < total_pages,
+        },
+    })
 
 
 @api_view(["POST"])
@@ -770,3 +1221,117 @@ def get_employer_applications(request):
         })
 
     return Response({"applications": applications})
+
+
+@api_view(["GET"])
+def get_admin_dashboard(request):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user.get("role") != "admin":
+        return Response({"error": "Admin access required"}, status=403)
+
+    total_users = users_collection.count_documents({})
+    total_students = users_collection.count_documents({"role": "student"})
+    total_employers = users_collection.count_documents({"role": "employer"})
+    verified_users = users_collection.count_documents({"is_verified": True})
+
+    total_listings = listings_collection.count_documents({})
+    active_listings = listings_collection.count_documents({"is_active": True})
+    expired_active_listings = listings_collection.count_documents({
+        "is_active": True,
+        "deadline": {"$lt": datetime.utcnow().strftime("%Y-%m-%d")},
+    })
+
+    total_applications = applications_collection.count_documents({})
+    pending_applications = applications_collection.count_documents({"status": "pending"})
+    accepted_applications = applications_collection.count_documents({"status": "accepted"})
+    rejected_applications = applications_collection.count_documents({"status": "rejected"})
+
+    total_interviews = interviews_collection.count_documents({})
+    proposed_interviews = interviews_collection.count_documents({"status": "proposed"})
+    confirmed_interviews = interviews_collection.count_documents({"status": "confirmed"})
+
+    recent_users = list(
+        users_collection.find({}, {"username": 1, "role": 1, "email": 1, "is_verified": 1})
+        .sort("_id", -1)
+        .limit(8)
+    )
+    for item in recent_users:
+        item["_id"] = str(item["_id"])
+
+    recent_listings = list(
+        listings_collection.find({}, {"job_title": 1, "employer_username": 1, "deadline": 1, "is_active": 1})
+        .sort("_id", -1)
+        .limit(8)
+    )
+    for item in recent_listings:
+        item["_id"] = str(item["_id"])
+        employer = users_collection.find_one(
+            {"username": item.get("employer_username", ""), "role": "employer"},
+            {"profile": 1},
+        )
+        if employer and isinstance(employer.get("profile"), dict):
+            item["company_name"] = employer["profile"].get("company_name", "Unknown Company")
+        else:
+            item["company_name"] = "Unknown Company"
+
+    recent_applications = list(
+        applications_collection.find(
+            {},
+            {"job_title": 1, "full_name": 1, "student_username": 1, "status": 1, "applied_at": 1},
+        )
+        .sort("_id", -1)
+        .limit(8)
+    )
+    for item in recent_applications:
+        item["_id"] = str(item["_id"])
+
+    return Response({
+        "stats": {
+            "users_total": total_users,
+            "students_total": total_students,
+            "employers_total": total_employers,
+            "verified_users": verified_users,
+            "listings_total": total_listings,
+            "listings_active": active_listings,
+            "listings_expired_active": expired_active_listings,
+            "applications_total": total_applications,
+            "applications_pending": pending_applications,
+            "applications_accepted": accepted_applications,
+            "applications_rejected": rejected_applications,
+            "interviews_total": total_interviews,
+            "interviews_proposed": proposed_interviews,
+            "interviews_confirmed": confirmed_interviews,
+        },
+        "recent_users": recent_users,
+        "recent_listings": recent_listings,
+        "recent_applications": recent_applications,
+    })
+
+
+@api_view(["POST"])
+def admin_toggle_listing(request, listing_id):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user.get("role") != "admin":
+        return Response({"error": "Admin access required"}, status=403)
+
+    from bson.objectid import ObjectId
+
+    try:
+        oid = ObjectId(listing_id)
+    except Exception:
+        return Response({"error": "Invalid listing ID"}, status=400)
+
+    listing = listings_collection.find_one({"_id": oid})
+    if not listing:
+        return Response({"error": "Listing not found"}, status=404)
+
+    is_active = request.data.get("is_active")
+    if not isinstance(is_active, bool):
+        return Response({"error": "is_active must be boolean"}, status=400)
+
+    listings_collection.update_one({"_id": oid}, {"$set": {"is_active": is_active}})
+    return Response({"message": "Listing status updated", "is_active": is_active})

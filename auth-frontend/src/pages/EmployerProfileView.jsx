@@ -68,7 +68,7 @@ export default function EmployerProfileView() {
   return (
     <div className="profile-view-bg">
       <button className="back-button" onClick={() => navigate(-1)}>
-        ← Back
+        Back
       </button>
 
       <div className="profile-view-header">Company Profile</div>

@@ -1,0 +1,16 @@
+# Django & REST
+Django>=6.0
+djangorestframework
+django-cors-headers
+python-dotenv
+PyJWT
+
+# MongoDB
+pymongo
+
+# File / images
+Pillow
+
+# CV rating
+requests
+pypdf

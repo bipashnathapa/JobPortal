@@ -109,7 +109,7 @@ export default function JobApplicationForm() {
       const data = await res.json();
 
       if (data.message) {
-        setMessage("Application submitted successfully! ✓");
+        setMessage("Application submitted successfully.");
         setTimeout(() => navigate("/listings"), 2000);
       } else {
         setMessage(data.error || "Failed to submit application");
@@ -214,7 +214,7 @@ export default function JobApplicationForm() {
 
           <div className="form-group">
             <label htmlFor="cv-upload" className="cv-upload-label">
-              <span className="attachment-icon">📎</span>
+              <span className="attachment-icon">Attach</span>
               {fileName || "Attach your CV"}
             </label>
             <input

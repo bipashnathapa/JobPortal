@@ -8,9 +8,12 @@ export default function JobListingDetail() {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isSaved, setIsSaved] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   useEffect(() => {
     fetchListing();
+    checkSavedStatus();
   }, [listingId]);
 
   const fetchListing = async () => {
@@ -36,8 +39,43 @@ export default function JobListingDetail() {
     }
   };
 
+  const checkSavedStatus = async () => {
+    try {
+      const token = localStorage.getItem("access");
+      const res = await fetch("http://127.0.0.1:8000/api/saved-jobs/", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const savedJobs = data.saved_jobs || [];
+      setIsSaved(savedJobs.some((job) => job._id === listingId));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleApply = () => {
     navigate(`/apply/${listingId}`);
+  };
+
+  const handleSaveToggle = async () => {
+    try {
+      setSaveLoading(true);
+      const token = localStorage.getItem("access");
+      const endpoint = isSaved
+        ? `http://127.0.0.1:8000/api/unsave-job/${listingId}/`
+        : `http://127.0.0.1:8000/api/save-job/${listingId}/`;
+
+      await fetch(endpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsSaved(!isSaved);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaveLoading(false);
+    }
   };
 
   if (loading) {
@@ -63,7 +101,7 @@ export default function JobListingDetail() {
     <div className="job-detail-container">
       {/* Navigation */}
       <nav className="job-detail-navbar">
-        <button className="nav-btn" onClick={() => navigate("/student")}>Home</button>
+        <button className="nav-btn" onClick={() => navigate("/home")}>Home</button>
         <button className="nav-btn" onClick={() => navigate("/student")}>Dashboard</button>
         <button className="nav-btn" onClick={() => navigate("/listings")}>Listings</button>
       </nav>
@@ -140,15 +178,15 @@ export default function JobListingDetail() {
           <button className="apply-btn" onClick={handleApply}>
             Apply
           </button>
-          <button className="save-btn" onClick={() => alert("Save feature coming soon!")}>
-            Save for later
+          <button className="save-btn" onClick={handleSaveToggle} disabled={saveLoading}>
+            {saveLoading ? "Saving..." : isSaved ? "Saved" : "Save for later"}
           </button>
         </div>
       </div>
 
       {/* Back Button */}
       <button className="back-to-dashboard" onClick={() => navigate(-1)}>
-        ← Back
+        Back
       </button>
     </div>
   );

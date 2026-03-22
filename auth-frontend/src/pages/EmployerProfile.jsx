@@ -80,7 +80,7 @@ export default function EmployerProfile() {
     const res = await updateEmployerProfile(formData);
 
     if (res.message) {
-      setMessage("Profile saved successfully ✓");
+      setMessage("Profile saved successfully.");
       
       // Update image preview with saved image path
       if (res.profile_picture) {

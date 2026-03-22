@@ -22,9 +22,10 @@ const LoginPage = () => {
       localStorage.setItem("access", res.access);
       localStorage.setItem("username", form.username);
 
-      
       if (res.role === "student") {
-        window.location.href = "/student";
+        window.location.href = "/home";
+      } else if (res.role === "admin") {
+        window.location.href = "/admin";
       } else {
         window.location.href = "/employer";
       }

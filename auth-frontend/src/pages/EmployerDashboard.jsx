@@ -169,6 +169,9 @@ export default function EmployerDashboard() {
           <button className="action-btn" onClick={handleViewProfile}>
             View profile
           </button>
+          <button className="action-btn" onClick={() => navigate("/employer-interviews")}>
+            Interviews
+          </button>
         </div>
       </div>
 
@@ -189,7 +192,7 @@ export default function EmployerDashboard() {
           {unreadNotifications.length > 0 && (
             <>
               <h2 className="section-header">
-                🔔 New Notifications ({unreadNotifications.length})
+                New Notifications ({unreadNotifications.length})
               </h2>
               <div className="notifications-list">
                 {unreadNotifications.map((notification) => (
@@ -208,7 +211,7 @@ export default function EmployerDashboard() {
                       className="mark-read-btn-emp"
                       onClick={() => handleMarkNotificationRead(notification._id)}
                     >
-                      ✓
+                      Mark
                     </button>
                   </div>
                 ))}
@@ -219,7 +222,7 @@ export default function EmployerDashboard() {
           {readNotifications.length > 0 && (
             <>
               <h2 className="section-header read-title">
-                📂 Earlier Notifications ({readNotifications.length})
+                Earlier Notifications ({readNotifications.length})
               </h2>
               <div className="notifications-list read">
                 {displayedReadNotifications.map((notification) => (

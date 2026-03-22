@@ -1,0 +1,143 @@
+.cv-feedback-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 2rem;
+  color: #eee;
+}
+
+.cv-feedback-card {
+  max-width: 640px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cv-feedback-card h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+}
+
+.cv-feedback-desc {
+  color: #aaa;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.cv-feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cv-feedback-field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.cv-feedback-field input[type="file"] {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #eee;
+}
+
+.cv-feedback-field textarea {
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #eee;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.cv-feedback-field textarea::placeholder {
+  color: #666;
+}
+
+.cv-feedback-error {
+  color: #f88;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.cv-feedback-submit {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(90deg, #4361ee, #3a56d8);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.cv-feedback-submit:hover:not(:disabled) {
+  opacity: 0.95;
+}
+
+.cv-feedback-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.cv-feedback-result {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cv-feedback-rating {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.cv-feedback-score {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #6ee7b7;
+}
+
+.cv-feedback-out-of {
+  font-size: 1.25rem;
+  color: #888;
+}
+
+.cv-feedback-summary {
+  color: #ccc;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.cv-feedback-suggestions h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: #aaa;
+}
+
+.cv-feedback-suggestions ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #ccc;
+  line-height: 1.6;
+}
+
+.cv-feedback-suggestions li {
+  margin-bottom: 0.35rem;
+}
+
+.cv-feedback-config {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}

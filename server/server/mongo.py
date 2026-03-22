@@ -10,4 +10,4 @@ users_collection = db["users"]  # collection for users
 listings_collection = db["job"]
 applications_collection = db["applications"]
 notifications_collection = db["notifications"]
-
+interviews_collection = db["interviews"]

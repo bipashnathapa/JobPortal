@@ -71,6 +71,12 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-admin-key",
+    "admin-key",
+]
 
 ROOT_URLCONF = "server.urls"
 
@@ -145,3 +151,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "no-reply@jobportal.com"
 
+# CV rating (Groq – free key at https://console.groq.com)
+import os
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / ".env")
+except ImportError:
+    pass
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")

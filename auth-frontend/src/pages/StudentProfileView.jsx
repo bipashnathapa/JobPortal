@@ -70,7 +70,7 @@ export default function StudentProfileView() {
   return (
     <div className="profile-view-bg">
       <button className="back-button" onClick={() => navigate(-1)}>
-        ← Back
+        Back
       </button>
 
       <div className="profile-view-header">{username}'s Profile</div>

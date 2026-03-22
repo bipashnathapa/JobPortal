@@ -267,6 +267,11 @@
   background: #222;
 }
 
+.save-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* Back Button */
 .back-to-dashboard {
   display: block;

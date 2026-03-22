@@ -49,7 +49,7 @@ export default function PostListing() {
       const data = await res.json();
 
       if (data.message) {
-        setMessage("Listing posted successfully ✓");
+        setMessage("Listing posted successfully.");
         setTimeout(() => navigate("/employer"), 1500);
       } else {
         setMessage(data.error || "Failed to post listing");
@@ -64,7 +64,7 @@ export default function PostListing() {
   return (
     <div className="post-listing-bg">
       <button className="back-button" onClick={() => navigate("/employer")}>
-        ← Back
+        Back
       </button>
 
       <div className="post-listing-header">Post a Job Listing</div>

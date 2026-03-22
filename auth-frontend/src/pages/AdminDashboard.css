@@ -1,0 +1,116 @@
+.admin-page {
+  min-height: 100vh;
+  background: #f3f4f7;
+  font-family: "Inter", sans-serif;
+  color: #171717;
+  padding: 26px;
+}
+
+.admin-header {
+  max-width: 1200px;
+  margin: 0 auto 20px auto;
+}
+
+.admin-header h1 {
+  margin: 0 0 14px 0;
+}
+
+.admin-auth {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-auth input {
+  flex: 1;
+  max-width: 360px;
+  border: 1px solid #d7d8de;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+}
+
+.admin-auth button {
+  border: none;
+  background: #111;
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.admin-error {
+  color: #b22b2b;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.stats-grid {
+  max-width: 1200px;
+  margin: 0 auto 18px auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid #e3e4ea;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.stat-card h3 {
+  margin: 0 0 10px 0;
+}
+
+.stat-card p {
+  margin: 0 0 6px 0;
+  color: #404049;
+}
+
+.admin-section {
+  max-width: 1200px;
+  margin: 0 auto 14px auto;
+  background: #fff;
+  border: 1px solid #e3e4ea;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.admin-section h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.05rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.admin-section table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-section th,
+.admin-section td {
+  border-bottom: 1px solid #efeff2;
+  text-align: left;
+  padding: 9px 8px;
+  font-size: 0.9rem;
+}
+
+.admin-section th {
+  color: #5a5a64;
+  font-weight: 700;
+}
+
+.table-action-btn {
+  border: 1px solid #d2d3d9;
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
