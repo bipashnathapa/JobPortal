@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./StudentProfileView.css";
 
 export default function StudentProfileView() {
@@ -12,21 +13,16 @@ export default function StudentProfileView() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("access");
-        if (!token) {
+        if (!localStorage.getItem("access")) {
           setError("Unauthorized");
           setLoading(false);
           return;
         }
 
         // Fetch profile by username
-        const res = await fetch(
-          `http://127.0.0.1:8000/api/view-student-profile/${username}/`,
-          {
-            method: "GET",
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const res = await fetchWithAuth(`/view-student-profile/${username}/`, {
+          method: "GET",
+        });
 
         const data = await res.json();
 

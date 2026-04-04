@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./SavedJobs.css";
 
 export default function SavedJobs() {
@@ -13,10 +14,8 @@ export default function SavedJobs() {
 
   const fetchSavedJobs = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/saved-jobs/", {
+      const res = await fetchWithAuth("/saved-jobs/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setSavedJobs(data.saved_jobs || []);
@@ -29,10 +28,8 @@ export default function SavedJobs() {
 
   const handleUnsave = async (listingId) => {
     try {
-      const token = localStorage.getItem("access");
-      await fetch(`http://127.0.0.1:8000/api/unsave-job/${listingId}/`, {
+      await fetchWithAuth(`/unsave-job/${listingId}/`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
       fetchSavedJobs();
     } catch (err) {

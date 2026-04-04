@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import LogoutButton from "../components/LogoutButton";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./HomePage.css";
 
 export default function HomePage() {
@@ -17,10 +19,8 @@ export default function HomePage() {
 
   const fetchListings = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/all-listings/", {
+      const res = await fetchWithAuth("/all-listings/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setListings(data.listings || []);
@@ -83,6 +83,7 @@ export default function HomePage() {
         <button className="nav-btn active">Home</button>
         <button className="nav-btn" onClick={() => navigate("/student")}>Dashboard</button>
         <button className="nav-btn" onClick={() => navigate("/listings")}>Listings</button>
+        <LogoutButton />
       </nav>
 
       <section className="home-hero">

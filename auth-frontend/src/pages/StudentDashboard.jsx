@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import LogoutButton from "../components/LogoutButton";
+import { fetchWithAuth } from "../services/apiClient.js";
+import "./EmployerDashboard.css";
 import "./StudentDashboard.css";
 
 export default function StudentDashboard() {
@@ -7,9 +10,10 @@ export default function StudentDashboard() {
   const username = localStorage.getItem("username") || "Student";
   const [notifications, setNotifications] = useState([]);
   const [savedJobsCount, setSavedJobsCount] = useState(0);
+  const [activeApplicationsCount, setActiveApplicationsCount] = useState(0);
   const [pagination, setPagination] = useState({
     page: 1,
-    page_size: 8,
+    page_size: 200,
     total_count: 0,
     total_pages: 1,
     has_previous: false,
@@ -17,18 +21,17 @@ export default function StudentDashboard() {
   });
 
   useEffect(() => {
-    fetchNotifications(1);
+    fetchNotifications();
     fetchSavedJobsCount();
+    fetchApplicationStats();
   }, []);
 
-  const fetchNotifications = async (page = 1) => {
+  const fetchNotifications = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch(
-        `http://127.0.0.1:8000/api/student-notifications/?page=${page}&page_size=8`,
+      const res = await fetchWithAuth(
+        `/student-notifications/?page=1&page_size=200`,
         {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
+          method: "GET",
         }
       );
       const data = await res.json();
@@ -49,13 +52,25 @@ export default function StudentDashboard() {
 
   const fetchSavedJobsCount = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/saved-jobs/", {
+      const res = await fetchWithAuth("/saved-jobs/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setSavedJobsCount(data.saved_count || 0);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchApplicationStats = async () => {
+    try {
+      const res = await fetchWithAuth("/student-application-stats/", {
+        method: "GET",
+      });
+      const data = await res.json();
+      if (typeof data.active_applications === "number") {
+        setActiveApplicationsCount(data.active_applications);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -71,12 +86,10 @@ export default function StudentDashboard() {
 
   const handleMarkAsRead = async (notificationId) => {
     try {
-      const token = localStorage.getItem("access");
-      await fetch(`http://127.0.0.1:8000/api/notification/${notificationId}/read/`, {
+      await fetchWithAuth(`/notification/${notificationId}/read/`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
-      fetchNotifications(pagination.page);
+      fetchNotifications();
     } catch (err) {
       console.error(err);
     }
@@ -85,18 +98,6 @@ export default function StudentDashboard() {
   // Separate notifications into unread and read
   const unreadNotifications = notifications.filter(notif => !notif.read);
   const readNotifications = notifications.filter(notif => notif.read);
-
-  const handlePreviousPage = () => {
-    if (pagination.has_previous) {
-      fetchNotifications(pagination.page - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (pagination.has_next) {
-      fetchNotifications(pagination.page + 1);
-    }
-  };
 
   const getNotificationMessage = (notification, isReadSection = false) => {
     if (notification.type === "interview_proposed") {
@@ -125,6 +126,7 @@ export default function StudentDashboard() {
         <button className="nav-btn" onClick={() => navigate("/listings")}>
           Listings
         </button>
+        <LogoutButton />
       </nav>
 
       <div className="hero-section">
@@ -155,7 +157,7 @@ export default function StudentDashboard() {
 
       <div className="stats-section">
         <div className="stat-card">
-          <h3 className="stat-number">12</h3>
+          <h3 className="stat-number">{activeApplicationsCount}</h3>
           <p className="stat-label">Active applications</p>
         </div>
         <div className="stat-card">
@@ -165,8 +167,22 @@ export default function StudentDashboard() {
       </div>
 
       {/* Notifications Section */}
-      {notifications.length > 0 && (
-        <div className="notifications-container">
+      <div className="notifications-container">
+        <div className="notifications-dash-header-row">
+          <h2 className="notifications-title notifications-main-heading">Notifications</h2>
+          <button
+            type="button"
+            className="view-all-notifications-btn"
+            onClick={() => navigate("/student/notifications")}
+          >
+            View all notifications
+          </button>
+        </div>
+
+        {notifications.length === 0 ? (
+          <p className="notifications-empty-dash">No notifications yet.</p>
+        ) : (
+          <>
           {/* Unread Notifications */}
           {unreadNotifications.length > 0 && (
             <>
@@ -231,29 +247,15 @@ export default function StudentDashboard() {
             </>
           )}
 
-          {pagination.total_pages > 1 && (
-            <div className="pagination-controls">
-              <button
-                className="pagination-btn"
-                onClick={handlePreviousPage}
-                disabled={!pagination.has_previous}
-              >
-                Previous
-              </button>
-              <span className="pagination-info">
-                Page {pagination.page} of {pagination.total_pages} ({pagination.total_count} total)
-              </span>
-              <button
-                className="pagination-btn"
-                onClick={handleNextPage}
-                disabled={!pagination.has_next}
-              >
-                Next
-              </button>
-            </div>
+          {pagination.total_count > 200 && (
+            <p className="notifications-truncation-note">
+              Showing your 200 most recent notifications here. Open &quot;View all notifications&quot; for
+              paginated history.
+            </p>
           )}
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

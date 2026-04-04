@@ -15,6 +15,87 @@
   padding: 0 20px;
 }
 
+.notifications-dash-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 20px;
+  margin-bottom: 20px;
+}
+
+.notifications-main-heading {
+  margin: 0 !important;
+}
+
+.view-all-notifications-btn {
+  border: 2px solid #1f1f23;
+  background: #fff;
+  color: #1f1f23;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.view-all-notifications-btn:hover {
+  background: #1f1f23;
+  color: #fff;
+}
+
+.notifications-empty-dash,
+.notifications-empty {
+  color: #5c5c66;
+  font-size: 1rem;
+  margin: 8px 0 0 0;
+}
+
+.notifications-truncation-note {
+  margin-top: 16px;
+  font-size: 0.88rem;
+  color: #666a72;
+  line-height: 1.45;
+}
+
+.notifications-full-page {
+  padding-top: 8px;
+}
+
+.notifications-dash-header {
+  margin-bottom: 8px;
+}
+
+.notifications-page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #141414;
+  margin: 10px 0 0 0;
+}
+
+.back-to-dash-btn {
+  border: none;
+  background: transparent;
+  color: #3d3d43;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.back-to-dash-btn:hover {
+  color: #111;
+}
+
+.notifications-page-hint {
+  font-size: 0.9rem;
+  color: #6b6b75;
+  margin: 0 0 22px 0;
+}
+
 .notifications-title {
   font-size: 1.28rem;
   font-weight: 700;

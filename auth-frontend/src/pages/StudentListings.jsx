@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./StudentListings.css";
 
 export default function StudentListings() {
@@ -14,10 +15,8 @@ export default function StudentListings() {
 
   const fetchListings = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/all-listings/", {
+      const res = await fetchWithAuth("/all-listings/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.listings) {

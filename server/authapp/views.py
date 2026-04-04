@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.http import HttpResponseRedirect
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -9,6 +10,7 @@ from server.mongo import (
     applications_collection,
     notifications_collection,
     interviews_collection,
+    pending_esewa_collection,
 )
 from .utils import (
     send_verification_email,
@@ -16,6 +18,15 @@ from .utils import (
     send_interview_response_email,
 )
 from .cv_rating import extract_text_from_pdf, get_cv_feedback
+from .esewa import build_request_signature, verify_response_signature, decode_success_query_data
+from .session_tokens import (
+    issue_access_token,
+    issue_refresh_token,
+    revoke_refresh_token,
+    refresh_token_doc_valid,
+    set_refresh_cookie,
+    clear_refresh_cookie,
+)
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -25,6 +36,25 @@ from datetime import datetime, timedelta
 import os
 
 VALID_ROLES = ("student", "employer")
+
+
+def _student_cv_analysis_access(username: str) -> dict:
+    """Lifetime flag = legacy unlimited; otherwise each analysis consumes one credit."""
+    u = users_collection.find_one(
+        {"username": username, "role": "student"},
+        {"cv_analysis_lifetime_paid": 1, "cv_analysis_credits": 1},
+    )
+    if not u:
+        return {"unlimited": False, "credits": 0}
+    credits = int(u.get("cv_analysis_credits") or 0)
+    if u.get("cv_analysis_lifetime_paid"):
+        return {"unlimited": True, "credits": credits}
+    return {"unlimited": False, "credits": credits}
+
+
+def _student_can_analyze_cv(username: str) -> bool:
+    s = _student_cv_analysis_access(username)
+    return s["unlimited"] or s["credits"] > 0
 
 
 
@@ -38,8 +68,13 @@ def get_user_from_token(request):
     try:
         token = auth.split(" ")[1]
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        t = payload.get("typ")
+        if t == "refresh":
+            return None
+        if t is not None and t != "access":
+            return None
         return payload
-    except:
+    except Exception:
         return None
 
 
@@ -113,18 +148,68 @@ def login(request):
     if not user.get("is_verified"):
         return Response({"error": "Email not verified"}, status=403)
 
-    payload = {
-        "username": username,
-        "role": user["role"],
-        "exp": datetime.utcnow() + timedelta(hours=1)
-    }
+    access = issue_access_token(username, user["role"])
+    refresh_jwt, _ = issue_refresh_token(username)
 
-    token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+    resp = Response({"access": access, "role": user["role"]})
+    set_refresh_cookie(resp, refresh_jwt)
+    return resp
 
-    return Response({
-        "access": token,
-        "role": user["role"]
-    })
+
+@csrf_exempt
+@api_view(["POST"])
+def token_refresh(request):
+    raw = request.COOKIES.get("refresh_token")
+    if not raw:
+        return Response({"error": "No refresh token"}, status=401)
+    try:
+        payload = jwt.decode(raw, settings.SECRET_KEY, algorithms=["HS256"])
+        if payload.get("typ") != "refresh":
+            return Response({"error": "Invalid token"}, status=401)
+        jti = payload.get("jti")
+        username = payload.get("username")
+        if not jti or not username:
+            return Response({"error": "Invalid token"}, status=401)
+    except jwt.ExpiredSignatureError:
+        return Response({"error": "Refresh expired"}, status=401)
+    except Exception:
+        return Response({"error": "Invalid token"}, status=401)
+
+    if not refresh_token_doc_valid(jti):
+        return Response({"error": "Invalid or revoked refresh token"}, status=401)
+
+    user = users_collection.find_one({"username": username})
+    if not user:
+        return Response({"error": "User not found"}, status=401)
+
+    revoke_refresh_token(jti)
+    new_access = issue_access_token(username, user["role"])
+    new_refresh, _ = issue_refresh_token(username)
+
+    resp = Response({"access": new_access})
+    set_refresh_cookie(resp, new_refresh)
+    return resp
+
+
+@csrf_exempt
+@api_view(["POST"])
+def logout_view(request):
+    raw = request.COOKIES.get("refresh_token")
+    if raw:
+        try:
+            payload = jwt.decode(
+                raw,
+                settings.SECRET_KEY,
+                algorithms=["HS256"],
+                options={"verify_exp": False},
+            )
+            if payload.get("typ") == "refresh" and payload.get("jti"):
+                revoke_refresh_token(payload["jti"])
+        except Exception:
+            pass
+    resp = Response({"ok": True})
+    clear_refresh_cookie(resp)
+    return resp
 
 
 #  CV RATING (simple: rate + suggestions via Groq)
@@ -150,8 +235,34 @@ def rate_cv(request):
     if not cv_text or len(cv_text) < 30:
         return Response({"error": "Provide a PDF and/or paste CV text (at least a few lines)."}, status=400)
 
+    price_npr = getattr(settings, "CV_ANALYSIS_PRICE_NPR", 20)
+    access = _student_cv_analysis_access(user["username"])
+    if not access["unlimited"]:
+        dec = users_collection.find_one_and_update(
+            {
+                "username": user["username"],
+                "role": "student",
+                "cv_analysis_credits": {"$gte": 1},
+            },
+            {"$inc": {"cv_analysis_credits": -1}},
+        )
+        if not dec:
+            return Response(
+                {
+                    "payment_required": True,
+                    "price_npr": price_npr,
+                    "message": f"Pay with eSewa for one CV analysis ({price_npr} NPR per run).",
+                },
+                status=402,
+            )
+
     result = get_cv_feedback(cv_text)
     if result.get("error") and result["error"] != "GROQ_NOT_CONFIGURED":
+        if not access["unlimited"]:
+            users_collection.update_one(
+                {"username": user["username"], "role": "student"},
+                {"$inc": {"cv_analysis_credits": 1}},
+            )
         err = result["error"] if getattr(settings, "DEBUG", False) else "CV analysis failed. Try again."
         return Response({"error": err}, status=500)
 
@@ -161,6 +272,112 @@ def rate_cv(request):
         "summary": result["summary"],
         "message": result["summary"] if result.get("error") == "GROQ_NOT_CONFIGURED" else "Here’s your CV feedback.",
     })
+
+
+@api_view(["GET"])
+def cv_payment_status(request):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user.get("role") != "student":
+        return Response({"error": "Only students"}, status=403)
+    price = getattr(settings, "CV_ANALYSIS_PRICE_NPR", 20)
+    s = _student_cv_analysis_access(user["username"])
+    return Response(
+        {
+            "paid": s["unlimited"] or s["credits"] > 0,
+            "price_npr": price,
+            "credits": s["credits"],
+            "unlimited": s["unlimited"],
+        }
+    )
+
+
+@api_view(["POST"])
+def esewa_cv_init(request):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user.get("role") != "student":
+        return Response({"error": "Only students"}, status=403)
+    if _student_cv_analysis_access(user["username"])["unlimited"]:
+        return Response(
+            {"error": "already_paid", "message": "You already have unlimited CV analysis from a previous purchase."},
+            status=400,
+        )
+
+    import uuid
+
+    price = str(getattr(settings, "CV_ANALYSIS_PRICE_NPR", 20))
+    merchant = getattr(settings, "ESEWA_MERCHANT_CODE", "EPAYTEST")
+    secret = getattr(settings, "ESEWA_SECRET_KEY", "")
+    txn = str(uuid.uuid4())
+
+    pending_esewa_collection.insert_one(
+        {
+            "transaction_uuid": txn,
+            "username": user["username"],
+            "amount_npr": int(price),
+            "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+    )
+
+    signature = build_request_signature(price, txn, merchant, secret)
+    backend = getattr(settings, "BACKEND_PUBLIC_URL", "http://127.0.0.1:8000")
+    success_url = f"{backend}/api/payment/esewa/success/"
+    failure_url = f"{backend}/api/payment/esewa/failure/"
+
+    fields = {
+        "amount": price,
+        "tax_amount": "0",
+        "total_amount": price,
+        "transaction_uuid": txn,
+        "product_code": merchant,
+        "product_service_charge": "0",
+        "product_delivery_charge": "0",
+        "success_url": success_url,
+        "failure_url": failure_url,
+        "signed_field_names": "total_amount,transaction_uuid,product_code",
+        "signature": signature,
+    }
+
+    return Response(
+        {
+            "action_url": getattr(settings, "ESEWA_EPAY_FORM_URL"),
+            "fields": fields,
+        }
+    )
+
+
+def esewa_success(request):
+    data_b64 = request.GET.get("data") or ""
+    payload = decode_success_query_data(data_b64) if data_b64 else None
+    frontend = getattr(settings, "FRONTEND_URL", "http://localhost:5173")
+    secret = getattr(settings, "ESEWA_SECRET_KEY", "")
+
+    if not payload:
+        return HttpResponseRedirect(f"{frontend}/cv-feedback?payment=error")
+    if payload.get("status") != "COMPLETE":
+        return HttpResponseRedirect(f"{frontend}/cv-feedback?payment=failed")
+    if not verify_response_signature(payload, secret):
+        return HttpResponseRedirect(f"{frontend}/cv-feedback?payment=invalid")
+
+    txn = str(payload.get("transaction_uuid") or "")
+    pending = pending_esewa_collection.find_one({"transaction_uuid": txn})
+    if not pending:
+        return HttpResponseRedirect(f"{frontend}/cv-feedback?payment=unknown")
+
+    users_collection.update_one(
+        {"username": pending["username"], "role": "student"},
+        {"$inc": {"cv_analysis_credits": 1}},
+    )
+    pending_esewa_collection.delete_one({"transaction_uuid": txn})
+    return HttpResponseRedirect(f"{frontend}/cv-feedback?payment=success")
+
+
+def esewa_failure(request):
+    frontend = getattr(settings, "FRONTEND_URL", "http://localhost:5173")
+    return HttpResponseRedirect(f"{frontend}/cv-feedback?payment=cancelled")
 
 
 #  STUDENT PROFILE
@@ -571,8 +788,12 @@ def get_all_listings(request):
     if not user:
         return Response({"error": "Unauthorized"}, status=401)
 
-    # Get all active listings
-    listings = list(listings_collection.find({"is_active": True}))
+    # Newest first (posted_at); legacy docs without it fall back to _id
+    listings = list(
+        listings_collection.find({"is_active": True}).sort(
+            [("posted_at", -1), ("_id", -1)]
+        )
+    )
     
     # Convert ObjectId to string and add company names
     for listing in listings:
@@ -1041,14 +1262,7 @@ def get_employer_notifications(request):
     if user["role"] != "employer":
         return Response({"error": "Only employers can view notifications"}, status=403)
 
-    # Delete notifications older than 7 days
-    seven_days_ago = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
-    notifications_collection.delete_many({
-        "employer_username": user["username"],
-        "created_at": {"$lt": seven_days_ago}
-    })
-    
-    # Get remaining notifications for this employer
+    # Get all notifications for this employer (newest first)
     notifications = list(notifications_collection.find({
         "employer_username": user["username"]
     }).sort("created_at", -1))
@@ -1119,13 +1333,6 @@ def get_student_notifications(request):
     if user["role"] != "student":
         return Response({"error": "Only students can view notifications"}, status=403)
 
-    # Delete notifications older than 7 days
-    seven_days_ago = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
-    notifications_collection.delete_many({
-        "student_username": user["username"],
-        "created_at": {"$lt": seven_days_ago}
-    })
-
     # Parse pagination query params.
     try:
         page = int(request.GET.get("page", 1))
@@ -1138,7 +1345,7 @@ def get_student_notifications(request):
         page_size = 8
 
     page = max(1, page)
-    page_size = max(1, min(page_size, 50))
+    page_size = max(1, min(page_size, 200))
 
     query = {"student_username": user["username"]}
     total_count = notifications_collection.count_documents(query)
@@ -1182,12 +1389,27 @@ def mark_notification_read(request, notification_id):
 
     from bson.objectid import ObjectId
     from server.mongo import notifications_collection
-    
-    notifications_collection.update_one(
-        {"_id": ObjectId(notification_id)},
-        {"$set": {"read": True}}
-    )
-    
+
+    try:
+        oid = ObjectId(notification_id)
+    except Exception:
+        return Response({"error": "Invalid notification id"}, status=400)
+
+    notif = notifications_collection.find_one({"_id": oid})
+    if not notif:
+        return Response({"error": "Notification not found"}, status=404)
+
+    if user["role"] == "student":
+        if notif.get("student_username") != user["username"]:
+            return Response({"error": "Forbidden"}, status=403)
+    elif user["role"] == "employer":
+        if notif.get("employer_username") != user["username"]:
+            return Response({"error": "Forbidden"}, status=403)
+    else:
+        return Response({"error": "Forbidden"}, status=403)
+
+    notifications_collection.update_one({"_id": oid}, {"$set": {"read": True}})
+
     return Response({"message": "Notification marked as read"})
 
 @api_view(["GET"])
@@ -1221,6 +1443,29 @@ def get_employer_applications(request):
         })
 
     return Response({"applications": applications})
+
+
+@api_view(["GET"])
+def get_student_application_stats(request):
+    """Application counts for the logged-in student. Active = not rejected."""
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user["role"] != "student":
+        return Response({"error": "Only students can view application stats"}, status=403)
+
+    username = user["username"]
+    base_q = {"student_username": username}
+    total = applications_collection.count_documents(base_q)
+    rejected = applications_collection.count_documents({**base_q, "status": "rejected"})
+    active_applications = max(0, total - rejected)
+
+    return Response(
+        {
+            "active_applications": active_applications,
+            "total_applications": total,
+        }
+    )
 
 
 @api_view(["GET"])

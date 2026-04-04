@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./ApplicationDetail.css";
 
 export default function ApplicationDetail() {
@@ -29,12 +30,10 @@ export default function ApplicationDetail() {
 
   const handleUpdateStatus = async (status) => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch(`http://127.0.0.1:8000/api/application/${application._id}/status/`, {
+      const res = await fetchWithAuth(`/application/${application._id}/status/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ status }),
       });
@@ -70,12 +69,10 @@ export default function ApplicationDetail() {
     }
     try {
       setScheduling(true);
-      const token = localStorage.getItem("access");
-      const res = await fetch(`http://127.0.0.1:8000/api/interviews/propose/${application._id}/`, {
+      const res = await fetchWithAuth(`/interviews/propose/${application._id}/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           slot_start: slotStart,

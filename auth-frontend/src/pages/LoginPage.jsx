@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { loginUser } from "../services/authAPI";
 import "./AuthPage.css";
 import bg from "../assets/bg.jpg";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -21,13 +23,14 @@ const LoginPage = () => {
     if (res.access && res.role) {
       localStorage.setItem("access", res.access);
       localStorage.setItem("username", form.username);
+      localStorage.setItem("role", res.role);
 
       if (res.role === "student") {
-        window.location.href = "/home";
+        navigate("/home", { replace: true });
       } else if (res.role === "admin") {
-        window.location.href = "/admin";
+        navigate("/admin", { replace: true });
       } else {
-        window.location.href = "/employer";
+        navigate("/employer", { replace: true });
       }
     } else {
       alert(res.error || "Login failed");

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./JobApplicationForm.css";
 
 export default function JobApplicationForm() {
@@ -24,10 +25,8 @@ export default function JobApplicationForm() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("access");
-        const res = await fetch("http://127.0.0.1:8000/api/student-profile/", {
+        const res = await fetchWithAuth("/student-profile/", {
           method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
         
@@ -87,7 +86,6 @@ export default function JobApplicationForm() {
     setLoading(true);
     
     try {
-      const token = localStorage.getItem("access");
       const formData = new FormData();
       
       formData.append("full_name", form.full_name);
@@ -98,11 +96,9 @@ export default function JobApplicationForm() {
       formData.append("previous_experience", form.previous_experience);
       formData.append("cv", form.cv);
 
-      const res = await fetch(`http://127.0.0.1:8000/api/apply/${listingId}/`, {
+      const res = await fetchWithAuth(`/apply/${listingId}/`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: {},
         body: formData,
       });
 

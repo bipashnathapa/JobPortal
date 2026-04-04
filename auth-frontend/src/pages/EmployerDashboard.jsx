@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import LogoutButton from "../components/LogoutButton";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./EmployerDashboard.css";
 
 export default function EmployerDashboard() {
@@ -10,7 +12,6 @@ export default function EmployerDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAllApplications, setShowAllApplications] = useState(false);
-  const [showAllRead, setShowAllRead] = useState(false);
   const [showHistory, setShowHistory] = useState(false); // New state for history toggle
 
   useEffect(() => {
@@ -21,10 +22,8 @@ export default function EmployerDashboard() {
 
   const fetchListings = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/employer-listings/", {
+      const res = await fetchWithAuth("/employer-listings/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.listings) {
@@ -39,10 +38,8 @@ export default function EmployerDashboard() {
 
   const fetchApplications = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/employer-applications/", {
+      const res = await fetchWithAuth("/employer-applications/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.applications) {
@@ -58,10 +55,8 @@ export default function EmployerDashboard() {
 
   const fetchNotifications = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/employer-notifications/", {
+      const res = await fetchWithAuth("/employer-notifications/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.notifications) {
@@ -74,10 +69,8 @@ export default function EmployerDashboard() {
 
   const handleMarkNotificationRead = async (notificationId) => {
     try {
-      const token = localStorage.getItem("access");
-      await fetch(`http://127.0.0.1:8000/api/notification/${notificationId}/read/`, {
+      await fetchWithAuth(`/notification/${notificationId}/read/`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
       fetchNotifications();
     } catch (err) {
@@ -103,10 +96,8 @@ export default function EmployerDashboard() {
     }
 
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch(`http://127.0.0.1:8000/api/delete-listing/${listingId}/`, {
+      const res = await fetchWithAuth(`/delete-listing/${listingId}/`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.message) {
@@ -136,7 +127,6 @@ export default function EmployerDashboard() {
   // Logic for filtering
   const unreadNotifications = notifications.filter(notif => !notif.read);
   const readNotifications = notifications.filter(notif => notif.read);
-  const displayedReadNotifications = showAllRead ? readNotifications : readNotifications.slice(0, 3);
 
   // New filtered application lists
   const pendingApps = applications.filter(app => app.status === "pending");
@@ -147,9 +137,10 @@ export default function EmployerDashboard() {
   return (
     <div className="new-dash-container">
       <nav className="dash-navbar">
-        <button className="nav-btn">Home</button>
+        <button className="nav-btn" onClick={() => navigate("/home")}>Home</button>
         <button className="nav-btn active">Dashboard</button>
-        <button className="nav-btn">Listings</button>
+        <button className="nav-btn" onClick={() => navigate("/employer")}>Listings</button>
+        <LogoutButton />
       </nav>
 
       <div className="hero-section">
@@ -187,8 +178,22 @@ export default function EmployerDashboard() {
       </div>
 
       {/* Notifications Section */}
-      {notifications.length > 0 && (
-        <div className="notifications-section">
+      <div className="notifications-section">
+        <div className="notifications-dash-header-row-emp">
+          <h2 className="section-header notifications-main-heading-emp">Notifications</h2>
+          <button
+            type="button"
+            className="view-all-notifications-btn-emp"
+            onClick={() => navigate("/employer/notifications")}
+          >
+            View all notifications
+          </button>
+        </div>
+
+        {notifications.length === 0 ? (
+          <p className="notifications-empty-dash-emp">No notifications yet.</p>
+        ) : (
+          <>
           {unreadNotifications.length > 0 && (
             <>
               <h2 className="section-header">
@@ -225,7 +230,7 @@ export default function EmployerDashboard() {
                 Earlier Notifications ({readNotifications.length})
               </h2>
               <div className="notifications-list read">
-                {displayedReadNotifications.map((notification) => (
+                {readNotifications.map((notification) => (
                   <div key={notification._id} className="notification-card-emp read">
                     <div className="notification-content-emp">
                       <h4 className="notification-title">{notification.student_name}</h4>
@@ -237,20 +242,11 @@ export default function EmployerDashboard() {
                   </div>
                 ))}
               </div>
-              {readNotifications.length > 3 && (
-                <button 
-                  className="show-more-btn-emp"
-                  onClick={() => setShowAllRead(!showAllRead)}
-                >
-                  {showAllRead 
-                    ? `Show Less ↑` 
-                    : `Show ${readNotifications.length - 3} More ↓`}
-                </button>
-              )}
             </>
           )}
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       {/* Applications Section */}
       <div className="applications-section">

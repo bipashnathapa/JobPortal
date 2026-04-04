@@ -29,10 +29,20 @@
   font-size: 0.95rem;
 }
 
-.admin-auth button {
+.admin-auth button:not(.admin-logout-btn) {
   border: none;
   background: #111;
   color: #fff;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.admin-auth .admin-logout-btn {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
   border-radius: 8px;
   padding: 10px 16px;
   cursor: pointer;

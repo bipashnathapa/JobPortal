@@ -54,6 +54,9 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
+ACCESS_TOKEN_LIFETIME = timedelta(minutes=15)
+REFRESH_TOKEN_LIFETIME = timedelta(days=7)
+
 # Email (example using console backend for testing)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@jobportal.com'
@@ -70,7 +73,12 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+]
+CORS_ALLOW_CREDENTIALS = True
 from corsheaders.defaults import default_headers
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
@@ -159,3 +167,14 @@ try:
 except ImportError:
     pass
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+
+# eSewa CV lifetime payment
+CV_ANALYSIS_PRICE_NPR = int(os.environ.get("CV_ANALYSIS_PRICE_NPR", "20"))
+BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "http://127.0.0.1:8000")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+ESEWA_MERCHANT_CODE = os.environ.get("ESEWA_MERCHANT_CODE", "EPAYTEST")
+ESEWA_SECRET_KEY = os.environ.get("ESEWA_SECRET_KEY", "8gBm/:&EnhH.1/q")
+ESEWA_EPAY_FORM_URL = os.environ.get(
+    "ESEWA_EPAY_FORM_URL",
+    "https://rc-epay.esewa.com.np/api/epay/main/v2/form",
+)

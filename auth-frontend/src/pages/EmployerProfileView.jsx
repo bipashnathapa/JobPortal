@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./EmployerProfileView.css";
 
 export default function EmployerProfileView() {
@@ -11,20 +12,15 @@ export default function EmployerProfileView() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("access");
-        if (!token) {
+        if (!localStorage.getItem("access")) {
           setError("Unauthorized");
           setLoading(false);
           return;
         }
 
-        const res = await fetch(
-          `http://127.0.0.1:8000/api/employer-profile/`,
-          {
-            method: "GET",
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const res = await fetchWithAuth(`/employer-profile/`, {
+          method: "GET",
+        });
 
         const data = await res.json();
 

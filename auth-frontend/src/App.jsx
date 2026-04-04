@@ -18,15 +18,20 @@ import StudentInterviews from "./pages/StudentInterviews";
 import EmployerInterviews from "./pages/EmployerInterviews";
 import AdminDashboard from "./pages/AdminDashboard";
 import CVFeedback from "./pages/CVFeedback";
+import StudentNotifications from "./pages/StudentNotifications";
+import EmployerNotifications from "./pages/EmployerNotifications";
+import RequireLoggedOut from "./components/RequireLoggedOut";
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<AuthPage />} />
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<RequireLoggedOut><AuthPage /></RequireLoggedOut>} />
+      <Route path="/login" element={<RequireLoggedOut><LoginPage /></RequireLoggedOut>} />
       <Route path="/student" element={<StudentDashboard />} />
+      <Route path="/student/notifications" element={<StudentNotifications />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/employer" element={<EmployerDashboard />} />
+      <Route path="/employer/notifications" element={<EmployerNotifications />} />
       <Route path="/student-profile" element={<StudentProfile />} />
       <Route path="/employer-profile" element={<EmployerProfile />} />
       

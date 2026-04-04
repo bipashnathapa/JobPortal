@@ -1,12 +1,15 @@
 // src/services/authAPI.js
 
-const BASE_URL = "http://127.0.0.1:8000/api"; // include /api prefix
+import { API_BASE } from "./apiClient.js";
+
+const BASE_URL = API_BASE;
 
 export const registerUser = async (data) => {
   try {
     const res = await fetch(`${BASE_URL}/register/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -29,6 +32,7 @@ export const loginUser = async (data) => {
     const res = await fetch(`${BASE_URL}/login/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(data),
     });
 
@@ -43,4 +47,18 @@ export const loginUser = async (data) => {
     console.error(err);
     return { error: "Network error" };
   }
+};
+
+export const logout = async () => {
+  try {
+    await fetch(`${BASE_URL}/logout/`, {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch (_) {
+    /* ignore */
+  }
+  localStorage.removeItem("access");
+  localStorage.removeItem("username");
+  window.location.href = "/login";
 };

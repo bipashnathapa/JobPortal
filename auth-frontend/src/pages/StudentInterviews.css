@@ -5,36 +5,7 @@
   font-family: "Inter", sans-serif;
 }
 
-.dash-navbar {
-  background: #000;
-  border-radius: 50px;
-  padding: 15px 40px;
-  display: flex;
-  justify-content: center;
-  gap: 60px;
-  max-width: 500px;
-  margin: 0 auto 40px auto;
-}
-
-.nav-btn {
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 8px 16px;
-  transition: all 0.3s ease;
-  border-radius: 25px;
-}
-
-.nav-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.nav-btn.active {
-  background: rgba(255, 255, 255, 0.15);
-}
+/* .dash-navbar / nav .nav-btn: src/styles/dashboardNav.css */
 
 .student-interviews-content {
   max-width: 1000px;

@@ -1,15 +1,11 @@
 // src/services/employerAPI.js
-const BASE_URL = "http://127.0.0.1:8000/api";
+import { API_BASE, fetchWithAuth } from "./apiClient.js";
 
 // Get the employer's profile using JWT token
 export const getEmployerProfile = async () => {
   try {
-    const token = localStorage.getItem("access");
-    if (!token) return { error: "No access token found" };
-
-    const res = await fetch(`${BASE_URL}/employer-profile/`, {
+    const res = await fetchWithAuth(`${API_BASE}/employer-profile/`, {
       method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     const text = await res.text();
@@ -27,16 +23,10 @@ export const getEmployerProfile = async () => {
 // Update the employer's profile using JWT token
 export const updateEmployerProfile = async (formData) => {
   try {
-    const token = localStorage.getItem("access");
-    if (!token) return { error: "No access token found" };
-
-    const res = await fetch(`${BASE_URL}/employer-profile/update/`, {
+    const res = await fetchWithAuth(`${API_BASE}/employer-profile/update/`, {
       method: "POST",
-      headers: {
-        // DON'T set Content-Type for FormData - browser sets it automatically with boundary
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData, // FormData object passed directly
+      headers: {},
+      body: formData,
     });
 
     const text = await res.text();

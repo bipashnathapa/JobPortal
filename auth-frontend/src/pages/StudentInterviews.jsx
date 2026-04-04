@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./StudentInterviews.css";
 
 export default function StudentInterviews() {
@@ -13,10 +14,8 @@ export default function StudentInterviews() {
 
   const fetchInterviews = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/interviews/student/", {
+      const res = await fetchWithAuth("/interviews/student/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setInterviews(data.interviews || []);
@@ -29,10 +28,8 @@ export default function StudentInterviews() {
 
   const handleAction = async (interviewId, action) => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch(`http://127.0.0.1:8000/api/interviews/${interviewId}/${action}/`, {
+      const res = await fetchWithAuth(`/interviews/${interviewId}/${action}/`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.error) {

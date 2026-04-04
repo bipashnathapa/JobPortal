@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./EmployerInterviews.css";
 
 export default function EmployerInterviews() {
@@ -13,10 +14,8 @@ export default function EmployerInterviews() {
 
   const fetchInterviews = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/interviews/employer/", {
+      const res = await fetchWithAuth("/interviews/employer/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setInterviews(data.interviews || []);

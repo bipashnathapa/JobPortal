@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import LogoutButton from "../components/LogoutButton";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
@@ -7,8 +9,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
 
   const fetchDashboard = async () => {
-    const token = localStorage.getItem("access");
-    if (!token) {
+    if (!localStorage.getItem("access")) {
       setError("Please log in as admin first.");
       setData(null);
       return;
@@ -17,9 +18,8 @@ export default function AdminDashboard() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/admin/dashboard/", {
+      const res = await fetchWithAuth("/admin/dashboard/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
       if (!res.ok) {
@@ -38,18 +38,16 @@ export default function AdminDashboard() {
   };
 
   const toggleListing = async (listingId, nextState) => {
-    const token = localStorage.getItem("access");
-    if (!token) {
+    if (!localStorage.getItem("access")) {
       alert("Please log in as admin first.");
       return;
     }
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/admin/listing/${listingId}/toggle/`, {
+      const res = await fetchWithAuth(`/admin/listing/${listingId}/toggle/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ is_active: nextState }),
       });
@@ -79,6 +77,7 @@ export default function AdminDashboard() {
           <button onClick={fetchDashboard} disabled={loading}>
             {loading ? "Loading..." : "Refresh"}
           </button>
+          <LogoutButton className="admin-logout-btn" />
         </div>
         {error && <p className="admin-error">{error}</p>}
       </div>

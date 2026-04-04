@@ -1,8 +1,29 @@
 .cv-feedback-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: black;
   padding: 2rem;
   color: #eee;
+}
+
+.cv-feedback-topbar {
+  max-width: 640px;
+  margin: 0 auto 1rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.cv-feedback-back {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #eee;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.cv-feedback-back:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .cv-feedback-card {
@@ -140,4 +161,27 @@
   color: #9ca3af;
   font-size: 0.9rem;
   margin-top: 0.5rem;
+}
+
+.cv-feedback-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cv-feedback-price-amount {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #6ee7b7;
+}
+
+.cv-feedback-price-note {
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.cv-feedback-banner {
+  color: #bbf7d0;
+  margin-bottom: 0.9rem;
 }

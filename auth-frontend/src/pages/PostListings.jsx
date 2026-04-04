@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./PostListings.css";
 
 export default function PostListing() {
@@ -30,18 +31,16 @@ export default function PostListing() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("access");
-      if (!token) {
+      if (!localStorage.getItem("access")) {
         setMessage("Unauthorized. Please log in.");
         setLoading(false);
         return;
       }
 
-      const res = await fetch("http://127.0.0.1:8000/api/post-listing/", {
+      const res = await fetchWithAuth("/post-listing/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(form),
       });
@@ -105,14 +104,14 @@ export default function PostListing() {
 
         <input
           name="location"
-          placeholder="Location (e.g., New York, NY)"
+          placeholder="Location (e.g., Kathmandu)"
           value={form.location}
           onChange={handleChange}
         />
 
         <input
           name="salary"
-          placeholder="Salary (e.g., $50,000 - $70,000)"
+          placeholder="Salary (e.g., 50,000 - 70,000)"
           value={form.salary}
           onChange={handleChange}
         />
@@ -139,7 +138,12 @@ export default function PostListing() {
           onChange={handleChange}
         />
 
-        <button onClick={handleSubmit} disabled={loading}>
+        <button
+          type="button"
+          className="post-listing-submit"
+          onClick={handleSubmit}
+          disabled={loading}
+        >
           {loading ? "Posting..." : "Post Listing"}
         </button>
 

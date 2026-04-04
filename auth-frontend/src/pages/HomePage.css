@@ -1,9 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Metrophobic&display=swap");
+
 .home-page {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 8% 2%, #f8f8fb 0%, transparent 28%),
-    radial-gradient(circle at 92% 14%, #f3eef2 0%, transparent 34%),
-    #ececef;
+  background: #fff;
   font-family: "Inter", sans-serif;
   color: #181818;
 }
@@ -37,19 +36,21 @@
 }
 
 .home-hero {
-  background:black;
+  background: black;
   color: #fff;
-  padding: 52px 0 64px;
+  padding: 72px 0 80px;
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .home-hero h1 {
   max-width: 1260px;
-  margin: 0 auto 26px;
+  margin: 0 auto 28px;
   padding: 0 32px;
-  font-size: clamp(2rem, 3.7vw, 3.2rem);
-  font-weight: 700;
-  letter-spacing: 0.4px;
+  font-family: "Metrophobic", sans-serif;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: normal;
+  line-height: 1.25;
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
 }
 
@@ -137,7 +138,7 @@
   background: #fff;
   border-radius: 20px;
   padding: 30px;
-  border: 2px solid transparent;
+  border: 2px solid #d9d9df;
 }
 
 .latest-card h3 {

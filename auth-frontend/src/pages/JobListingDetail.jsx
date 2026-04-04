@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../services/apiClient.js";
 import "./JobListingDetail.css";
 
 export default function JobListingDetail() {
@@ -18,10 +19,8 @@ export default function JobListingDetail() {
 
   const fetchListing = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch(`http://127.0.0.1:8000/api/listing/${listingId}/`, {
+      const res = await fetchWithAuth(`/listing/${listingId}/`, {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await res.json();
@@ -41,10 +40,8 @@ export default function JobListingDetail() {
 
   const checkSavedStatus = async () => {
     try {
-      const token = localStorage.getItem("access");
-      const res = await fetch("http://127.0.0.1:8000/api/saved-jobs/", {
+      const res = await fetchWithAuth("/saved-jobs/", {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       const savedJobs = data.saved_jobs || [];
@@ -61,14 +58,10 @@ export default function JobListingDetail() {
   const handleSaveToggle = async () => {
     try {
       setSaveLoading(true);
-      const token = localStorage.getItem("access");
-      const endpoint = isSaved
-        ? `http://127.0.0.1:8000/api/unsave-job/${listingId}/`
-        : `http://127.0.0.1:8000/api/save-job/${listingId}/`;
+      const path = isSaved ? `/unsave-job/${listingId}/` : `/save-job/${listingId}/`;
 
-      await fetch(endpoint, {
+      await fetchWithAuth(path, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
       setIsSaved(!isSaved);
     } catch (err) {

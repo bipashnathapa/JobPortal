@@ -1,7 +1,9 @@
 from django.urls import path
 from .views import (
-    register, 
-    login, 
+    register,
+    login,
+    token_refresh,
+    logout_view,
     home, 
     student_dashboard, 
     employer_dashboard, 
@@ -26,6 +28,7 @@ from .views import (
     confirm_interview,
     decline_interview,
     get_employer_applications,
+    get_student_application_stats,
     get_admin_dashboard,
     admin_toggle_listing,
     update_application_status,
@@ -33,12 +36,18 @@ from .views import (
     mark_notification_read,
     get_employer_notifications,
     rate_cv,
+    cv_payment_status,
+    esewa_cv_init,
+    esewa_success,
+    esewa_failure,
 )
 
 urlpatterns = [
     path('', home),
     path('register/', register, name='register'),
     path('login/', login, name='login'),
+    path('token/refresh/', token_refresh, name='token_refresh'),
+    path('logout/', logout_view, name='logout'),
     path('student-dashboard/', student_dashboard),
     path('employer-dashboard/', employer_dashboard),
     path('verify-email/', verify_email),
@@ -68,6 +77,7 @@ urlpatterns = [
     path('interviews/<str:interview_id>/confirm/', confirm_interview),
     path('interviews/<str:interview_id>/decline/', decline_interview),
     path('employer-applications/', get_employer_applications),
+    path('student-application-stats/', get_student_application_stats),
     path('admin/dashboard/', get_admin_dashboard),
     path('admin/listing/<str:listing_id>/toggle/', admin_toggle_listing),
     path('application/<str:application_id>/status/', update_application_status),
@@ -75,4 +85,8 @@ urlpatterns = [
     path('notification/<str:notification_id>/read/', mark_notification_read),
     path('employer-notifications/', get_employer_notifications),
     path('rate-cv/', rate_cv),
+    path('cv-payment/status/', cv_payment_status),
+    path('cv-payment/esewa/init/', esewa_cv_init),
+    path('payment/esewa/success/', esewa_success),
+    path('payment/esewa/failure/', esewa_failure),
 ]
