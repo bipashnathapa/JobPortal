@@ -12,6 +12,11 @@
   justify-content: flex-start;
 }
 
+.cv-feedback-topbar-row {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .cv-feedback-back {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.28);
@@ -184,4 +189,15 @@
 .cv-feedback-banner {
   color: #bbf7d0;
   margin-bottom: 0.9rem;
+}
+
+.cv-feedback-last-run {
+  margin-bottom: 1rem;
+}
+
+.cv-feedback-last-run-title {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #eee;
 }

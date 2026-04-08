@@ -2,6 +2,20 @@
 import { API_BASE, fetchWithAuth } from "./apiClient.js";
 
 // Get the student's profile using JWT token (no need to pass username)
+export const getStudentApplications = async () => {
+  try {
+    const res = await fetchWithAuth(`${API_BASE}/student-applications/`, {
+      method: "GET",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: data.error || "Failed to load applications" };
+    return data;
+  } catch (err) {
+    console.error(err);
+    return { error: "Network error" };
+  }
+};
+
 export const getStudentProfile = async () => {
   try {
     const res = await fetchWithAuth(`${API_BASE}/student-profile/`, {
@@ -66,6 +80,20 @@ export const rateCV = async (formData) => {
   }
 };
 
+export const getCvAnalysisHistory = async (limit = 50) => {
+  try {
+    const res = await fetchWithAuth(`${API_BASE}/cv-analysis-history/?limit=${limit}`, {
+      method: "GET",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: data.error || "Failed to load history" };
+    return data;
+  } catch (err) {
+    console.error(err);
+    return { error: "Network error" };
+  }
+};
+
 export const getCvPaymentStatus = async () => {
   try {
     const res = await fetchWithAuth(`${API_BASE}/cv-payment/status/`, {
@@ -87,6 +115,25 @@ export const initEsewaCvPayment = async () => {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return { error: data.error || "Failed to initialize eSewa payment" };
+    return data;
+  } catch (err) {
+    console.error(err);
+    return { error: "Network error" };
+  }
+};
+
+/** NLP resume score from PDF (spaCy backend). Student JWT required. */
+export const scoreResumeNlp = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append("resume", file);
+    const res = await fetchWithAuth(`${API_BASE}/resume-score/`, {
+      method: "POST",
+      headers: {},
+      body: formData,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: data.error || "Scoring failed" };
     return data;
   } catch (err) {
     console.error(err);

@@ -11,13 +11,14 @@ from server.mongo import (
     notifications_collection,
     interviews_collection,
     pending_esewa_collection,
+    cv_analysis_history_collection,
 )
 from .utils import (
     send_verification_email,
     send_interview_proposed_email,
     send_interview_response_email,
 )
-from .cv_rating import extract_text_from_pdf, get_cv_feedback
+from .cv_rating import extract_text_from_pdf, get_cv_feedback, GROQ_MODEL
 from .esewa import build_request_signature, verify_response_signature, decode_success_query_data
 from .session_tokens import (
     issue_access_token,
@@ -34,6 +35,8 @@ import hashlib
 import jwt
 from datetime import datetime, timedelta
 import os
+from .scoring_logic import analyze_with_nlp
+
 
 VALID_ROLES = ("student", "employer")
 
@@ -212,7 +215,7 @@ def logout_view(request):
     return resp
 
 
-#  CV RATING (simple: rate + suggestions via Groq)
+#  CV FEEDBACK (Groq: suggestions only, no numeric score)
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])
 def rate_cv(request):
@@ -266,12 +269,70 @@ def rate_cv(request):
         err = result["error"] if getattr(settings, "DEBUG", False) else "CV analysis failed. Try again."
         return Response({"error": err}, status=500)
 
-    return Response({
-        "rating": result["rating"],
-        "suggestions": result["suggestions"],
-        "summary": result["summary"],
-        "message": result["summary"] if result.get("error") == "GROQ_NOT_CONFIGURED" else "Here’s your CV feedback.",
-    })
+    try:
+        cv_analysis_history_collection.insert_one(
+            {
+                "student_username": user["username"],
+                "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "summary": (result.get("summary") or "")[:800],
+                "suggestions": list(result.get("suggestions") or [])[:12],
+                "model": GROQ_MODEL,
+                "provider": "groq",
+                "groq_live": result.get("error") != "GROQ_NOT_CONFIGURED",
+            }
+        )
+    except Exception:
+        pass
+
+    msg = (
+        (result.get("summary") or "Here’s your CV feedback.")
+        if result.get("error") == "GROQ_NOT_CONFIGURED"
+        else "Here’s your CV feedback."
+    )
+    return Response(
+        {
+            "suggestions": result["suggestions"],
+            "summary": result.get("summary") or "",
+            "message": msg,
+        }
+    )
+
+
+@api_view(["GET"])
+def get_cv_analysis_history(request):
+    """Past Groq CV analyses for the logged-in student (newest first)."""
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user.get("role") != "student":
+        return Response({"error": "Only students can view CV analysis history"}, status=403)
+
+    try:
+        limit = int(request.query_params.get("limit") or "50")
+        limit = max(1, min(100, limit))
+    except ValueError:
+        limit = 50
+
+    cursor = (
+        cv_analysis_history_collection.find({"student_username": user["username"]})
+        .sort([("created_at", -1), ("_id", -1)])
+        .limit(limit)
+    )
+    history = []
+    for doc in cursor:
+        history.append(
+            {
+                "_id": str(doc["_id"]),
+                "created_at": doc.get("created_at") or "",
+                "summary": doc.get("summary") or "",
+                "suggestions": doc.get("suggestions") or [],
+                "model": doc.get("model") or GROQ_MODEL,
+                "provider": doc.get("provider") or "groq",
+                "groq_live": doc.get("groq_live", True),
+            }
+        )
+
+    return Response({"history": history})
 
 
 @api_view(["GET"])
@@ -1469,6 +1530,52 @@ def get_student_application_stats(request):
 
 
 @api_view(["GET"])
+def get_student_applications(request):
+    """All job applications for the logged-in student (pending / accepted / rejected)."""
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user["role"] != "student":
+        return Response({"error": "Only students can view their applications"}, status=403)
+
+    username = user["username"]
+    apps_cursor = applications_collection.find({"student_username": username}).sort(
+        [("applied_at", -1), ("_id", -1)]
+    )
+    apps = list(apps_cursor)
+
+    employer_usernames = list({a.get("employer_username") for a in apps if a.get("employer_username")})
+    company_by_employer = {}
+    if employer_usernames:
+        for doc in users_collection.find(
+            {"username": {"$in": employer_usernames}, "role": "employer"},
+            {"username": 1, "profile": 1},
+        ):
+            prof = doc.get("profile") or {}
+            company_by_employer[doc["username"]] = prof.get("company_name") or ""
+
+    applications = []
+    for app in apps:
+        raw_status = (app.get("status") or "pending").lower()
+        if raw_status not in ("pending", "accepted", "rejected"):
+            raw_status = "pending"
+        emp = app.get("employer_username") or ""
+        applications.append(
+            {
+                "_id": str(app["_id"]),
+                "listing_id": app.get("listing_id"),
+                "job_title": app.get("job_title"),
+                "employer_username": emp,
+                "company_name": company_by_employer.get(emp, "") or "—",
+                "status": raw_status,
+                "applied_at": app.get("applied_at") or "",
+            }
+        )
+
+    return Response({"applications": applications})
+
+
+@api_view(["GET"])
 def get_admin_dashboard(request):
     user = get_user_from_token(request)
     if not user:
@@ -1580,3 +1687,32 @@ def admin_toggle_listing(request, listing_id):
 
     listings_collection.update_one({"_id": oid}, {"$set": {"is_active": is_active}})
     return Response({"message": "Listing status updated", "is_active": is_active})
+
+@api_view(["POST"])
+@parser_classes([MultiPartParser, FormParser])
+def resume_score_view(request):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user.get("role") != "student":
+        return Response({"error": "Only students can use resume scoring"}, status=403)
+
+    file = request.FILES.get("resume")
+    if not file:
+        return Response({"error": "No file uploaded"}, status=400)
+    if not file.name.lower().endswith(".pdf"):
+        return Response({"error": "Resume must be a PDF"}, status=400)
+
+    text = extract_text_from_pdf(file)
+    if not text or len(text.strip()) < 50:
+        return Response(
+            {"error": "Could not read enough text from the PDF. Try another file or paste text elsewhere."},
+            status=400,
+        )
+
+    try:
+        score = analyze_with_nlp(text)
+    except Exception as e:
+        return Response({"error": f"Scoring failed: {e!s}"}, status=500)
+
+    return Response({"score": score})

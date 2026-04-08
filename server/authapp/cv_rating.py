@@ -1,5 +1,5 @@
 """
-Simple CV rating: extract text from PDF, call Groq once for a rating + short suggestions.
+CV feedback via Groq: improvement suggestions only (no numeric score).
 """
 import os
 import re
@@ -12,6 +12,7 @@ except ImportError:
     PdfReader = None
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+# Exported for persistence / history (Groq API model id).
 GROQ_MODEL = "llama-3.1-8b-instant"
 
 
@@ -26,62 +27,48 @@ def extract_text_from_pdf(file) -> str:
         return ""
 
 
-def _parse(text: str) -> dict:
-    rating = 0
+def _parse_suggestions(text: str) -> list:
     suggestions = []
-    summary = ""
-    m = re.search(r"RATING:\s*(\d+)", text, re.I)
-    if m:
-        rating = min(10, max(1, int(m.group(1))))
     for line in text.splitlines():
         line = line.strip()
         if not line:
             continue
         if line.startswith("-"):
             suggestions.append(line.lstrip("- ").strip())
-        elif "SUMMARY:" in line.upper() and not summary:
-            summary = line.split(":", 1)[-1].strip()
-        elif "RATING:" not in line.upper() and len(line) > 12 and not line.startswith("-"):
-            summary = summary or line
-    return {
-        "rating": rating,
-        "suggestions": suggestions[:6] or ["Add more detail to key sections."],
-        "summary": summary or "Review completed.",
-    }
+        elif line.startswith("•"):
+            suggestions.append(line.lstrip("• ").strip())
+    return suggestions[:8] if suggestions else ["Add more detail to key sections."]
 
 
 def get_cv_feedback(cv_text: str) -> dict:
     cv_text = (cv_text or "").strip()
     if len(cv_text) < 50:
         return {
-            "rating": 0,
             "suggestions": ["Provide at least a few lines of CV content."],
-            "summary": "Not enough text to evaluate.",
+            "summary": "",
             "error": None,
         }
 
     api_key = getattr(settings, "GROQ_API_KEY", None) or os.getenv("GROQ_API_KEY")
     if not api_key:
         return {
-            "rating": 0,
             "suggestions": [],
             "summary": "Add GROQ_API_KEY to server/.env (free key at console.groq.com).",
             "error": "GROQ_NOT_CONFIGURED",
         }
 
-    prompt = """You are a career advisor. Review this CV and reply in this exact format only.
+    prompt = """You are a career advisor. Review this CV and give only concrete improvement suggestions.
 
 CV:
 ---
 {cv}
 ---
 
-Reply with exactly:
-1. RATING: (one number from 1 to 10)
-2. SUMMARY: (one short sentence on overall strength)
-3. Then 3-5 bullet points, each on a new line starting with "-"
-
-Keep it brief.""".format(cv=cv_text[:5000])
+Reply with 4-6 bullet points only. Each line must start with "-" (hyphen and space).
+No scores, no numbered ratings, no "SUMMARY:" line — only bullet suggestions.
+Keep each bullet one sentence when possible.""".format(
+        cv=cv_text[:5000]
+    )
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     payload = {
@@ -94,11 +81,10 @@ Keep it brief.""".format(cv=cv_text[:5000])
     try:
         r = requests.post(GROQ_URL, headers=headers, json=payload, timeout=30)
     except requests.RequestException as e:
-        return {"rating": 0, "suggestions": [], "summary": "", "error": str(e)}
+        return {"suggestions": [], "summary": "", "error": str(e)}
 
     if r.status_code == 401:
         return {
-            "rating": 0,
             "suggestions": [],
             "summary": "Invalid Groq API key.",
             "error": "GROQ_NOT_CONFIGURED",
@@ -110,17 +96,16 @@ Keep it brief.""".format(cv=cv_text[:5000])
             msg = err.get("error", {}).get("message", msg) or msg
         except Exception:
             msg = r.text[:150] or msg
-        return {"rating": 0, "suggestions": [], "summary": "", "error": msg}
+        return {"suggestions": [], "summary": "", "error": msg}
 
     try:
         data = r.json()
         content = (data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
         text = content.strip()
     except (IndexError, KeyError, TypeError):
-        return {"rating": 0, "suggestions": [], "summary": "", "error": "Invalid response."}
+        return {"suggestions": [], "summary": "", "error": "Invalid response."}
     if len(text) < 15:
-        return {"rating": 0, "suggestions": [], "summary": "", "error": "Response too short."}
+        return {"suggestions": [], "summary": "", "error": "Response too short."}
 
-    out = _parse(text)
-    out["error"] = None
-    return out
+    suggestions = _parse_suggestions(text)
+    return {"suggestions": suggestions, "summary": "", "error": None}

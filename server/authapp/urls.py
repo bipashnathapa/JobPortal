@@ -29,6 +29,7 @@ from .views import (
     decline_interview,
     get_employer_applications,
     get_student_application_stats,
+    get_student_applications,
     get_admin_dashboard,
     admin_toggle_listing,
     update_application_status,
@@ -36,10 +37,12 @@ from .views import (
     mark_notification_read,
     get_employer_notifications,
     rate_cv,
+    get_cv_analysis_history,
     cv_payment_status,
     esewa_cv_init,
     esewa_success,
     esewa_failure,
+    resume_score_view,
 )
 
 urlpatterns = [
@@ -78,6 +81,7 @@ urlpatterns = [
     path('interviews/<str:interview_id>/decline/', decline_interview),
     path('employer-applications/', get_employer_applications),
     path('student-application-stats/', get_student_application_stats),
+    path('student-applications/', get_student_applications),
     path('admin/dashboard/', get_admin_dashboard),
     path('admin/listing/<str:listing_id>/toggle/', admin_toggle_listing),
     path('application/<str:application_id>/status/', update_application_status),
@@ -85,6 +89,8 @@ urlpatterns = [
     path('notification/<str:notification_id>/read/', mark_notification_read),
     path('employer-notifications/', get_employer_notifications),
     path('rate-cv/', rate_cv),
+    path('cv-analysis-history/', get_cv_analysis_history),
+    path('resume-score/', resume_score_view),
     path('cv-payment/status/', cv_payment_status),
     path('cv-payment/esewa/init/', esewa_cv_init),
     path('payment/esewa/success/', esewa_success),

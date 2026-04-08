@@ -18,7 +18,10 @@ import StudentInterviews from "./pages/StudentInterviews";
 import EmployerInterviews from "./pages/EmployerInterviews";
 import AdminDashboard from "./pages/AdminDashboard";
 import CVFeedback from "./pages/CVFeedback";
+import CvAnalysisHistory from "./pages/CvAnalysisHistory";
+import ResumeScorer from "./pages/ResumeScorer";
 import StudentNotifications from "./pages/StudentNotifications";
+import StudentApplications from "./pages/StudentApplications";
 import EmployerNotifications from "./pages/EmployerNotifications";
 import RequireLoggedOut from "./components/RequireLoggedOut";
 
@@ -29,6 +32,7 @@ function App() {
       <Route path="/login" element={<RequireLoggedOut><LoginPage /></RequireLoggedOut>} />
       <Route path="/student" element={<StudentDashboard />} />
       <Route path="/student/notifications" element={<StudentNotifications />} />
+      <Route path="/student/applications" element={<StudentApplications />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/employer" element={<EmployerDashboard />} />
       <Route path="/employer/notifications" element={<EmployerNotifications />} />
@@ -44,6 +48,8 @@ function App() {
       <Route path="/listings" element={<StudentListings />} />
       <Route path="/saved-jobs" element={<SavedJobs />} />
       <Route path="/cv-feedback" element={<CVFeedback />} />
+      <Route path="/cv-analysis-history" element={<CvAnalysisHistory />} />
+      <Route path="/resume-scorer" element={<ResumeScorer />} />
       <Route path="/student-interviews" element={<StudentInterviews />} />
       <Route path="/employer-interviews" element={<EmployerInterviews />} />
       <Route path="/apply/:listingId" element={<JobApplicationForm />} />

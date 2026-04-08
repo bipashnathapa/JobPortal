@@ -19,7 +19,6 @@ export default function StudentDashboard() {
     has_previous: false,
     has_next: false,
   });
-
   useEffect(() => {
     fetchNotifications();
     fetchSavedJobsCount();
@@ -84,6 +83,10 @@ export default function StudentDashboard() {
     navigate("/cv-feedback");
   };
 
+  const handleResumeScorer = () => {
+    navigate("/resume-scorer");
+  };
+
   const handleMarkAsRead = async (notificationId) => {
     try {
       await fetchWithAuth(`/notification/${notificationId}/read/`, {
@@ -143,11 +146,20 @@ export default function StudentDashboard() {
           <button className="action-btn" onClick={handleAnalyzeCV}>
             Analyze your CV
           </button>
+          <button className="action-btn" onClick={() => navigate("/cv-analysis-history")}>
+            CV analysis history
+          </button>
+          <button className="action-btn" onClick={handleResumeScorer}>
+            Resume scorer (NLP)
+          </button>
           <button className="action-btn" onClick={handleViewProfile}>
             View profile
           </button>
           <button className="action-btn" onClick={() => navigate("/saved-jobs")}>
             View saved jobs
+          </button>
+          <button className="action-btn" onClick={() => navigate("/student/applications")}>
+            My applications
           </button>
           <button className="action-btn" onClick={() => navigate("/student-interviews")}>
             Interviews

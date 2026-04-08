@@ -3,6 +3,29 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { rateCV, getCvPaymentStatus, initEsewaCvPayment } from "../services/studentAPI";
 import "./CVFeedback.css";
 
+function FeedbackResultBlock({ result }) {
+  if (!result) return null;
+  const hasSuggestions = result.suggestions && result.suggestions.length > 0;
+  const fallbackText = (result.summary || result.message || "").trim();
+  return (
+    <div className="cv-feedback-result">
+      {hasSuggestions && (
+        <div className="cv-feedback-suggestions">
+          <h3>Suggestions</h3>
+          <ul>
+            {result.suggestions.map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {!hasSuggestions && fallbackText && (
+        <p className="cv-feedback-config">{fallbackText}</p>
+      )}
+    </div>
+  );
+}
+
 export default function CVFeedback() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -10,7 +33,6 @@ export default function CVFeedback() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [checkingPay, setCheckingPay] = useState(true);
-  const [paid, setPaid] = useState(false);
   const [credits, setCredits] = useState(null);
   const [unlimited, setUnlimited] = useState(false);
   const [priceNpr, setPriceNpr] = useState(20);
@@ -18,6 +40,8 @@ export default function CVFeedback() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [banner, setBanner] = useState("");
+
+  const canAnalyze = unlimited || (typeof credits === "number" && credits > 0);
 
   useEffect(() => {
     const payment = searchParams.get("payment");
@@ -31,6 +55,14 @@ export default function CVFeedback() {
     }
     searchParams.delete("payment");
     setSearchParams(searchParams, { replace: true });
+    (async () => {
+      const s = await getCvPaymentStatus();
+      if (!s.error) {
+        if (s.price_npr != null) setPriceNpr(s.price_npr);
+        setCredits(typeof s.credits === "number" ? s.credits : 0);
+        setUnlimited(!!s.unlimited);
+      }
+    })();
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
@@ -41,11 +73,11 @@ export default function CVFeedback() {
       if (cancelled) return;
       if (s.error) {
         setError(s.error);
-        setPaid(false);
+        setCredits(0);
+        setUnlimited(false);
       } else {
-        setPaid(!!s.paid);
         if (s.price_npr != null) setPriceNpr(s.price_npr);
-        setCredits(typeof s.credits === "number" ? s.credits : null);
+        setCredits(typeof s.credits === "number" ? s.credits : 0);
         setUnlimited(!!s.unlimited);
       }
       setCheckingPay(false);
@@ -78,6 +110,15 @@ export default function CVFeedback() {
     form.submit();
   };
 
+  const refreshPaymentStatus = async () => {
+    const s = await getCvPaymentStatus();
+    if (!s.error) {
+      if (s.price_npr != null) setPriceNpr(s.price_npr);
+      setCredits(typeof s.credits === "number" ? s.credits : 0);
+      setUnlimited(!!s.unlimited);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -92,13 +133,19 @@ export default function CVFeedback() {
       return;
     }
 
+    if (!unlimited && (credits == null || credits < 1)) {
+      setError(`Pay NPR ${priceNpr} with eSewa for one CV analysis credit, then try again.`);
+      return;
+    }
+
     setLoading(true);
     const res = await rateCV(formData);
     setLoading(false);
 
     if (res.payment_required) {
       setError(res.message || `Pay NPR ${res.price_npr ?? priceNpr} with eSewa for one CV analysis.`);
-      setPaid(false);
+      setCredits(0);
+      await refreshPaymentStatus();
       return;
     }
     if (res.error) {
@@ -106,19 +153,16 @@ export default function CVFeedback() {
       return;
     }
     setResult(res);
-    const s = await getCvPaymentStatus();
-    if (!s.error) {
-      setPaid(!!s.paid);
-      if (s.price_npr != null) setPriceNpr(s.price_npr);
-      setCredits(typeof s.credits === "number" ? s.credits : null);
-      setUnlimited(!!s.unlimited);
-    }
+    await refreshPaymentStatus();
   };
 
   const topBar = (
-    <div className="cv-feedback-topbar">
+    <div className="cv-feedback-topbar cv-feedback-topbar-row">
       <button type="button" className="cv-feedback-back" onClick={() => navigate("/student")}>
         ← Student dashboard
+      </button>
+      <button type="button" className="cv-feedback-back" onClick={() => navigate("/cv-analysis-history")}>
+        Past analyses (Groq)
       </button>
     </div>
   );
@@ -134,14 +178,22 @@ export default function CVFeedback() {
     );
   }
 
-  if (!paid && !result) {
+  if (!canAnalyze) {
     return (
       <div className="cv-feedback-page">
         {topBar}
+        {result && (
+          <div className="cv-feedback-card cv-feedback-last-run">
+            <h2 className="cv-feedback-last-run-title">Your last analysis</h2>
+            <p className="cv-feedback-desc">Pay below for another run. Past runs are also in &quot;Past analyses&quot;.</p>
+            <FeedbackResultBlock result={result} />
+          </div>
+        )}
         <div className="cv-feedback-card cv-feedback-paywall">
           <h1>CV analysis</h1>
           <p className="cv-feedback-desc">
-            Unlock AI-powered CV feedback (rating + improvement tips). Pay each time you want a new analysis.
+            Each analysis uses <strong>one eSewa payment</strong> (NPR {priceNpr}). Pay to receive a credit, then submit
+            your CV on the next screen.
           </p>
           <div className="cv-feedback-price">
             <span className="cv-feedback-price-amount">NPR {priceNpr}</span>
@@ -165,21 +217,20 @@ export default function CVFeedback() {
         {banner && <p className="cv-feedback-banner">{banner}</p>}
         {!unlimited && credits != null && credits > 0 && (
           <p className="cv-feedback-desc cv-feedback-credits">
-            {credits === 1 ? "1 analysis credit — submit to use it." : `${credits} analysis credits left.`}
+            {credits === 1 ? "1 analysis credit — submit uses it." : `${credits} analysis credits — each submit uses one.`}
           </p>
         )}
+        {unlimited && (
+          <p className="cv-feedback-desc cv-feedback-credits">Unlimited CV analyses on your account.</p>
+        )}
         <p className="cv-feedback-desc">
-          Upload your CV (PDF) or paste the text below. Get a rating and improvement suggestions.
+          Upload your CV (PDF) or paste the text below. Get improvement suggestions from the AI.
         </p>
 
         <form onSubmit={handleSubmit} className="cv-feedback-form">
           <div className="cv-feedback-field">
             <label>CV (PDF, optional)</label>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) => setFile(e.target.files[0] || null)}
-            />
+            <input type="file" accept=".pdf" onChange={(e) => setFile(e.target.files[0] || null)} />
           </div>
           <div className="cv-feedback-field">
             <label>Or paste your CV text</label>
@@ -198,30 +249,7 @@ export default function CVFeedback() {
           </button>
         </form>
 
-        {result && (
-          <div className="cv-feedback-result">
-            <div className="cv-feedback-rating">
-              <span className="cv-feedback-score">{result.rating}</span>
-              <span className="cv-feedback-out-of">/ 10</span>
-            </div>
-            {result.summary && (
-              <p className="cv-feedback-summary">{result.summary}</p>
-            )}
-            {result.suggestions && result.suggestions.length > 0 && (
-              <div className="cv-feedback-suggestions">
-                <h3>Suggestions</h3>
-                <ul>
-                  {result.suggestions.map((s, i) => (
-                    <li key={i}>{s}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {result.message && result.rating === 0 && (
-              <p className="cv-feedback-config">{result.message}</p>
-            )}
-          </div>
-        )}
+        {result && <FeedbackResultBlock result={result} />}
       </div>
     </div>
   );
