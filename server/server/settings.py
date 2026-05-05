@@ -178,12 +178,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 
 # eSewa CV lifetime payment
 CV_ANALYSIS_PRICE_NPR = int(os.environ.get("CV_ANALYSIS_PRICE_NPR", "20"))
-BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "").rstrip("/")
-if not BACKEND_PUBLIC_URL or "127.0.0.1" in BACKEND_PUBLIC_URL or "localhost" in BACKEND_PUBLIC_URL:
-    if os.environ.get("RENDER"):
-        BACKEND_PUBLIC_URL = "https://stepup-backend-0he9.onrender.com"
-    else:
-        BACKEND_PUBLIC_URL = "http://127.0.0.1:8000"
+BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "https://stepup-backend-0he9.onrender.com").rstrip("/")
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 ESEWA_MERCHANT_CODE = os.environ.get("ESEWA_MERCHANT_CODE", "EPAYTEST")

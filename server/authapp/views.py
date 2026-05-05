@@ -454,9 +454,14 @@ def get_profile(request):
     profile = db_user.get("profile", {})
 
 
-    backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "https://stepup-backend-0he9.onrender.com").rstrip("/")
+    backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "https://stepup-backend-0he9.onrender.com")
     profile_pic = profile.get("profile_picture", "")
+    
+    # Only prepend if it's a relative path and doesn't already have a domain
     if profile_pic and not profile_pic.startswith("http"):
+        # Ensure we don't double-slash
+        if not profile_pic.startswith("/"):
+            profile_pic = f"/{profile_pic}"
         profile_pic = f"{backend_url}{profile_pic}"
 
     return Response({
