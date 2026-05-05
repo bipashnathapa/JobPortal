@@ -454,6 +454,11 @@ def get_profile(request):
     profile = db_user.get("profile", {})
 
 
+    backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "").rstrip("/")
+    profile_pic = profile.get("profile_picture", "")
+    if profile_pic and not profile_pic.startswith("http"):
+        profile_pic = f"{backend_url}{profile_pic}"
+
     return Response({
         "profile": {
             "full_name": profile.get("full_name") or profile.get("fullName", ""),
@@ -461,7 +466,7 @@ def get_profile(request):
             "phone": profile.get("phone", ""),
             "bio": profile.get("bio", ""),
             "skills": profile.get("skills", ""),
-            "profile_picture": profile.get("profile_picture", "")
+            "profile_picture": profile_pic
         }
     })
 
