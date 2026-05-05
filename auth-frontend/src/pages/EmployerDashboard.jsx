@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LogoutButton from "../components/LogoutButton";
 import { fetchWithAuth } from "../services/apiClient.js";
+import { toast } from "react-hot-toast";
 import "./EmployerDashboard.css";
 
 export default function EmployerDashboard() {
@@ -12,7 +13,7 @@ export default function EmployerDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAllApplications, setShowAllApplications] = useState(false);
-  const [showHistory, setShowHistory] = useState(false); // New state for history toggle
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     fetchListings();
@@ -101,13 +102,14 @@ export default function EmployerDashboard() {
       });
       const data = await res.json();
       if (data.message) {
+        toast.success(data.message || "Listing deleted successfully");
         fetchListings();
       } else {
-        alert(data.error || "Failed to delete listing");
+        toast.error(data.error || "Failed to delete listing");
       }
     } catch (err) {
       console.error(err);
-      alert("Error deleting listing");
+      toast.error("Error deleting listing");
     }
   };
 
@@ -115,7 +117,6 @@ export default function EmployerDashboard() {
     navigate(`/application/${application._id}`, { state: { application } });
   };
 
-  // Helper to check if deadline has passed
   const isExpired = (deadline) => {
     if (!deadline) return false;
     const today = new Date();
@@ -124,11 +125,9 @@ export default function EmployerDashboard() {
     return today > expiry;
   };
 
-  // Logic for filtering
   const unreadNotifications = notifications.filter(notif => !notif.read);
   const readNotifications = notifications.filter(notif => notif.read);
 
-  // New filtered application lists
   const pendingApps = applications.filter(app => app.status === "pending");
   const processedApps = applications.filter(app => app.status !== "pending");
   
@@ -139,7 +138,7 @@ export default function EmployerDashboard() {
       <nav className="dash-navbar">
         <button className="nav-btn" onClick={() => navigate("/home")}>Home</button>
         <button className="nav-btn active">Dashboard</button>
-        <button className="nav-btn" onClick={() => navigate("/employer")}>Listings</button>
+        <button className="nav-btn" onClick={() => navigate("/employer-listings")}>Listings</button>
         <LogoutButton />
       </nav>
 
@@ -168,7 +167,7 @@ export default function EmployerDashboard() {
 
       <div className="stats-section">
         <div className="stat-card">
-          <h3 className="stat-number">{listings.length}</h3>
+          <h3 className="stat-number">{listings.filter(l => !isExpired(l.deadline)).length}</h3>
           <p className="stat-label">Active listings</p>
         </div>
         <div className="stat-card">
@@ -308,7 +307,6 @@ export default function EmployerDashboard() {
           </>
         )}
 
-        {/* New History List Section */}
         {showHistory && processedApps.length > 0 && (
           <div className="history-container">
             <h3 className="history-title-text">Decision History</h3>

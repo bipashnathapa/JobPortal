@@ -1,5 +1,5 @@
 """
-CV feedback via Groq: improvement suggestions only (no numeric score).
+CV feedback via Groq
 """
 import os
 import re

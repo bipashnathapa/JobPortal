@@ -47,7 +47,7 @@ export default function EmployerNotifications() {
         <button type="button" className="nav-btn" onClick={() => navigate("/employer")}>
           Dashboard
         </button>
-        <button type="button" className="nav-btn" onClick={() => navigate("/employer")}>
+        <button type="button" className="nav-btn" onClick={() => navigate("/employer-listings")}>
           Listings
         </button>
         <LogoutButton />
@@ -79,7 +79,7 @@ export default function EmployerNotifications() {
                         </div>
                         <p className="notification-message-emp">{notification.message}</p>
                         <span className="notification-time-emp">
-                          {new Date(notification.created_at).toLocaleString()}
+                          {new Date((notification.created_at || "").replace(" ", "T") + "Z").toLocaleString()}
                         </span>
                       </div>
                       <button
@@ -105,7 +105,7 @@ export default function EmployerNotifications() {
                         <h4 className="notification-title">{notification.student_name}</h4>
                         <p className="notification-message-emp">{notification.message}</p>
                         <span className="notification-time-emp">
-                          {new Date(notification.created_at).toLocaleString()}
+                          {new Date((notification.created_at || "").replace(" ", "T") + "Z").toLocaleString()}
                         </span>
                       </div>
                     </div>

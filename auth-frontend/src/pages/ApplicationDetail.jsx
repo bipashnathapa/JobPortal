@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../services/apiClient.js";
+import { toast } from "react-hot-toast";
 import "./ApplicationDetail.css";
 
 export default function ApplicationDetail() {
@@ -40,31 +41,31 @@ export default function ApplicationDetail() {
 
       const data = await res.json();
       if (data.message) {
-        alert(`Application ${status}!`);
+        toast.success(`Application ${status}!`);
         navigate("/employer");
       } else {
-        alert(data.error || "Failed to update status");
+        toast.error(data.error || "Failed to update status");
       }
     } catch (err) {
       console.error(err);
-      alert("Error updating status");
+      toast.error("Error updating status");
     }
   };
 
   const handleScheduleInterview = async () => {
     if (!slotStart || !slotEnd) {
-      alert("Please provide both start and end time.");
+      toast.error("Please provide both start and end time.");
       return;
     }
 
     const startDate = new Date(slotStart);
     const endDate = new Date(slotEnd);
     if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
-      alert("Please enter valid date and time values.");
+      toast.error("Please enter valid date and time values.");
       return;
     }
     if (endDate <= startDate) {
-      alert("End time must be later than start time.");
+      toast.error("End time must be later than start time.");
       return;
     }
     try {
@@ -84,10 +85,10 @@ export default function ApplicationDetail() {
       });
       const data = await res.json();
       if (data.error) {
-        alert(data.error);
+        toast.error(data.error);
         return;
       }
-      alert("Interview invitation sent to student.");
+      toast.success("Interview invitation sent to student.");
       setSlotStart("");
       setSlotEnd("");
       setMeetingLink("");
@@ -96,7 +97,7 @@ export default function ApplicationDetail() {
       navigate("/employer-interviews");
     } catch (err) {
       console.error(err);
-      alert("Error scheduling interview");
+      toast.error("Error scheduling interview");
     } finally {
       setScheduling(false);
     }
@@ -107,7 +108,7 @@ export default function ApplicationDetail() {
       <nav className="app-detail-navbar">
         <button className="nav-btn" onClick={() => navigate("/employer")}>Home</button>
         <button className="nav-btn" onClick={() => navigate("/employer")}>Dashboard</button>
-        <button className="nav-btn">Listings</button>
+        <button className="nav-btn" onClick={() => navigate("/employer-listings")}>Listings</button>
       </nav>
 
       <div className="app-detail-content">
@@ -130,7 +131,6 @@ export default function ApplicationDetail() {
         <div className="app-detail-card">
           <div className="section-header-with-btn">
             <h2 className="section-title">Applicant Information</h2>
-            {/* Added View Profile Button */}
             <button 
               className="view-full-profile-btn"
               onClick={() => navigate(`/view-student-profile/${application.student_username}`)}

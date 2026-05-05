@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../services/apiClient.js";
+import { toast } from "react-hot-toast";
 import "./StudentInterviews.css";
 
 export default function StudentInterviews() {
@@ -33,13 +34,14 @@ export default function StudentInterviews() {
       });
       const data = await res.json();
       if (data.error) {
-        alert(data.error);
+        toast.error(data.error);
         return;
       }
+      toast.success(`Interview ${action}ed successfully`);
       fetchInterviews();
     } catch (err) {
       console.error(err);
-      alert("Failed to update interview status");
+      toast.error("Failed to update interview status");
     }
   };
 

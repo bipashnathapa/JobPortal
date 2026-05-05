@@ -20,8 +20,8 @@
 .cv-history-item {
   padding: 1rem 1.1rem;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid #e4e4e9;
+  background: #fff;
 }
 
 .cv-history-item-head {
@@ -34,31 +34,31 @@
 
 .cv-history-date {
   font-size: 0.85rem;
-  color: #999;
+  color: #666a72;
 }
 
 .cv-history-rating {
   font-size: 1.35rem;
   font-weight: 700;
-  color: #fff;
+  color: #141414;
 }
 
 .cv-history-outof {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #888;
+  color: #666a72;
   margin-left: 2px;
 }
 
 .cv-history-demo {
   font-size: 0.8rem;
-  color: #c9a227;
+  color: #d97706;
   margin: 0 0 0.5rem 0;
 }
 
 .cv-history-summary {
   margin: 0 0 0.65rem 0;
-  color: #ccc;
+  color: #3d3d43;
   line-height: 1.5;
   font-size: 0.95rem;
 }
@@ -66,7 +66,7 @@
 .cv-history-suggestions {
   margin: 0;
   padding-left: 1.2rem;
-  color: #bbb;
+  color: #3d3d43;
   font-size: 0.9rem;
   line-height: 1.45;
 }
@@ -74,5 +74,5 @@
 .cv-history-meta {
   margin: 0.75rem 0 0 0;
   font-size: 0.75rem;
-  color: #666;
+  color: #666a72;
 }

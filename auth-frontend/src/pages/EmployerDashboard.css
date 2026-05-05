@@ -9,12 +9,12 @@
 .new-dash-container {
   min-height: 100vh;
   background: linear-gradient(to bottom, #e8e8e8 0%, #f5f5f5 50%, #e8e8e8 100%);
-  font-family: 'Inter', sans-serif;
+  font-family: "Metrophobic", sans-serif;
   padding: 20px;
 }
 
 /* Navigation Bar */
-/* Width / layout for .dash-navbar lives in src/styles/dashboardNav.css (#root …) */
+
 .dash-navbar {
   background: #000;
   border-radius: 50px;
@@ -180,6 +180,7 @@
   padding: 30px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
 }
 
 .listing-card:hover {

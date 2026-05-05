@@ -73,8 +73,14 @@ export default function JobApplicationForm() {
     e.preventDefault();
     
     // Validation
-    if (!form.full_name || !form.university || !form.email || !form.phone || !form.field_of_study) {
-      setMessage("Please fill in all required fields");
+    if (
+      !form.full_name.trim() ||
+      !form.university.trim() ||
+      !form.email.trim() ||
+      !form.phone.trim() ||
+      !form.field_of_study.trim()
+    ) {
+      setMessage("Please fill out all the fields");
       return;
     }
     
@@ -88,12 +94,12 @@ export default function JobApplicationForm() {
     try {
       const formData = new FormData();
       
-      formData.append("full_name", form.full_name);
-      formData.append("university", form.university);
-      formData.append("email", form.email);
-      formData.append("phone", form.phone);
-      formData.append("field_of_study", form.field_of_study);
-      formData.append("previous_experience", form.previous_experience);
+      formData.append("full_name", form.full_name.trim());
+      formData.append("university", form.university.trim());
+      formData.append("email", form.email.trim());
+      formData.append("phone", form.phone.trim());
+      formData.append("field_of_study", form.field_of_study.trim());
+      formData.append("previous_experience", form.previous_experience.trim());
       formData.append("cv", form.cv);
 
       const res = await fetchWithAuth(`/apply/${listingId}/`, {
@@ -105,8 +111,8 @@ export default function JobApplicationForm() {
       const data = await res.json();
 
       if (data.message) {
-        setMessage("Application submitted successfully.");
-        setTimeout(() => navigate("/listings"), 2000);
+        setMessage("Application submitted successfully. Redirecting to listings in a few seconds...");
+        setTimeout(() => navigate("/listings"), 5000);
       } else {
         setMessage(data.error || "Failed to submit application");
       }
@@ -121,9 +127,9 @@ export default function JobApplicationForm() {
   return (
     <div className="application-container">
       <nav className="app-navbar">
-        <button className="nav-btn">Home</button>
-        <button className="nav-btn">Dashboard</button>
-        <button className="nav-btn">Listings</button>
+        <button className="nav-btn" onClick={() => navigate("/home")}>Home</button>
+        <button className="nav-btn" onClick={() => navigate("/student")}>Dashboard</button>
+        <button className="nav-btn" onClick={() => navigate("/listings")}>Listings</button>
       </nav>
 
       <div className="app-form-wrapper">
@@ -220,7 +226,6 @@ export default function JobApplicationForm() {
               accept=".pdf"
               onChange={handleChange}
               style={{ display: 'none' }}
-              required
             />
             {fileName && <p className="file-name">{fileName}</p>}
           </div>

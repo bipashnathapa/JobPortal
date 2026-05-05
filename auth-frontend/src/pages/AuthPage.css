@@ -4,7 +4,7 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Metrophobic", sans-serif;
 }
 
 #root {
@@ -37,8 +37,8 @@ html, body {
   border-radius: 15px;
   color: white;
   /* Fixed width and height for identical symmetry */
-  width: 380px;
-  height: 550px; 
+  width: 460px;
+  height: 620px; 
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
@@ -60,8 +60,12 @@ html, body {
 .card h2 {
   text-align: center;
   margin: 0 0 30px 0;
-  font-size: 1.8rem;
+  font-size: 30px;
   font-weight: 600;
+  letter-spacing: normal;
+  line-height: 1.25;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  text-transform: uppercase;
 }
 
 /* Input container for spacing */
@@ -75,7 +79,7 @@ html, body {
 /* Inputs */
 .card input {
   padding: 12px 15px;
-  border-radius: 8px;
+  border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background-color: rgba(255, 255, 255, 0.1);
   color: white;
@@ -94,33 +98,66 @@ html, body {
   box-shadow: 0 0 0 2px rgba(30, 144, 255, 0.2);
 }
 
+.form-message {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.form-message.success {
+  color: #8ef2b0;
+}
+
+.form-message.error {
+  color: #ffc1c1;
+}
+
 /* Button container to push to bottom */
 .card .button-container {
   margin-top: auto;
   padding-top: 20px;
 }
 
+.auth-message {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.auth-message.success {
+  color: #8ef2b0;
+}
+
+.auth-message.error {
+  color: #ffc1c1;
+}
+
 /* Buttons */
 .card button {
   width: 100%;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 999px;
   border: none;
-  background-color: #1e90ff;
-  color: white;
+  background-color: #ffffff;
+  color: #111111;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
 .card button:hover {
-  background-color: #0f6acb;
+  background-color: #f0f0f0;
   transform: translateY(-1px);
 }
 
 .card button:active {
   transform: translateY(0);
+}
+
+.card button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 /* Responsive for small screens */
@@ -129,8 +166,27 @@ html, body {
     flex-direction: column;
     gap: 20px;
   }
-  .card {
+  .card, .student-card {
     width: 90%;
+    height: auto;
     min-height: auto;
   }
+}
+
+.auth-link-container {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 0.95rem;
+  color: #ccc;
+}
+
+.auth-link {
+  color: #1e90ff;
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 5px;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
 }

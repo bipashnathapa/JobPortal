@@ -8,9 +8,12 @@ export default function StudentListings() {
   const locationRouter = useLocation();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
 
   useEffect(() => {
     fetchListings();
+    setCurrentPage(1);
   }, [locationRouter.search]);
 
   const fetchListings = async () => {
@@ -72,6 +75,10 @@ export default function StudentListings() {
     return matchesSearch && matchesLocation && matchesType && matchesCategory;
   });
 
+  const totalPages = Math.ceil(filteredListings.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const currentListings = filteredListings.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
   return (
     <div className="student-listings-container">
       <nav className="listings-navbar">
@@ -94,11 +101,12 @@ export default function StudentListings() {
       <div className="listings-content">
         {loading ? (
           <p className="loading-text">Loading listings...</p>
-        ) : filteredListings.length === 0 ? (
+        ) : currentListings.length === 0 ? (
           <p className="no-listings-text">No job listings available at the moment.</p>
         ) : (
-          <div className="job-cards-grid">
-            {filteredListings.map((listing) => {
+          <div className="job-cards-grid-wrapper">
+            <div className="job-cards-grid">
+              {currentListings.map((listing) => {
               const expired = isExpired(listing.deadline);
               
               return (
@@ -176,6 +184,29 @@ export default function StudentListings() {
                 </div>
               );
             })}
+            </div>
+            
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button 
+                  className="page-btn" 
+                  disabled={currentPage === 1} 
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                >
+                  Previous
+                </button>
+                <span className="page-indicator">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button 
+                  className="page-btn" 
+                  disabled={currentPage === totalPages} 
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -1,8 +1,9 @@
 .cv-feedback-page {
   min-height: 100vh;
-  background: black;
+  background: #f5f5f5;
   padding: 2rem;
-  color: #eee;
+  color: #1f1f23;
+  font-family: "Metrophobic", sans-serif;
 }
 
 .cv-feedback-topbar {
@@ -18,35 +19,40 @@
 }
 
 .cv-feedback-back {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #eee;
+  background: #fff;
+  border: 1px solid #d9d9df;
+  color: #1f1f23;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .cv-feedback-back:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: #1f1f23;
+  color: #fff;
 }
 
 .cv-feedback-card {
   max-width: 640px;
   margin: 0 auto;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
+  background: #fff;
+  border-radius: 12px;
   padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid #e4e4e9;
+  box-shadow: 0 2px 6px rgba(20, 20, 20, 0.06);
 }
 
 .cv-feedback-card h1 {
   margin: 0 0 0.5rem;
-  font-size: 1.75rem;
+  font-size: 1.8rem;
+  font-family: "Metrophobic", sans-serif;
 }
 
 .cv-feedback-desc {
-  color: #aaa;
+  color: #5c5c66;
   margin-bottom: 1.5rem;
   font-size: 0.95rem;
 }
@@ -61,64 +67,67 @@
   display: block;
   margin-bottom: 0.35rem;
   font-size: 0.9rem;
-  color: #ccc;
+  color: #3d3d43;
+  font-weight: 600;
 }
 
 .cv-feedback-field input[type="file"] {
   width: 100%;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  color: #eee;
+  padding: 0.6rem;
+  background: #fff;
+  border: 1px solid #d9d9df;
+  border-radius: 10px;
+  color: #1f1f23;
 }
 
 .cv-feedback-field textarea {
   width: 100%;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  color: #eee;
+  background: #fff;
+  border: 1px solid #d9d9df;
+  border-radius: 10px;
+  color: #1f1f23;
   font-family: inherit;
   resize: vertical;
 }
 
 .cv-feedback-field textarea::placeholder {
-  color: #666;
+  color: #8b8b94;
 }
 
 .cv-feedback-error {
-  color: #f88;
+  color: #b42318;
   font-size: 0.9rem;
   margin: 0;
 }
 
 .cv-feedback-submit {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(90deg, #4361ee, #3a56d8);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: 10px 18px;
+  background: #1f1f23;
+  color: #fff;
+  border: 1px solid #1f1f23;
+  border-radius: 999px;
+  font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
   margin-top: 0.5rem;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .cv-feedback-submit:hover:not(:disabled) {
-  opacity: 0.95;
+  background: #fff;
+  color: #1f1f23;
 }
 
 .cv-feedback-submit:disabled {
-  opacity: 0.7;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
 .cv-feedback-result {
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid #e7e7ea;
 }
 
 .cv-feedback-rating {
@@ -131,16 +140,16 @@
 .cv-feedback-score {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #6ee7b7;
+  color: #141414;
 }
 
 .cv-feedback-out-of {
   font-size: 1.25rem;
-  color: #888;
+  color: #666a72;
 }
 
 .cv-feedback-summary {
-  color: #ccc;
+  color: #3d3d43;
   line-height: 1.5;
   margin-bottom: 1rem;
 }
@@ -148,13 +157,13 @@
 .cv-feedback-suggestions h3 {
   font-size: 1rem;
   margin-bottom: 0.5rem;
-  color: #aaa;
+  color: #141414;
 }
 
 .cv-feedback-suggestions ul {
   margin: 0;
   padding-left: 1.25rem;
-  color: #ccc;
+  color: #3d3d43;
   line-height: 1.6;
 }
 
@@ -163,7 +172,7 @@
 }
 
 .cv-feedback-config {
-  color: #9ca3af;
+  color: #5c5c66;
   font-size: 0.9rem;
   margin-top: 0.5rem;
 }
@@ -178,16 +187,16 @@
 .cv-feedback-price-amount {
   font-size: 1.7rem;
   font-weight: 700;
-  color: #6ee7b7;
+  color: #141414;
 }
 
 .cv-feedback-price-note {
-  color: #aaa;
+  color: #5c5c66;
   font-size: 0.9rem;
 }
 
 .cv-feedback-banner {
-  color: #bbf7d0;
+  color: #1f8b4c;
   margin-bottom: 0.9rem;
 }
 
@@ -199,5 +208,5 @@
   margin: 0 0 0.35rem 0;
   font-size: 1.15rem;
   font-weight: 600;
-  color: #eee;
+  color: #141414;
 }

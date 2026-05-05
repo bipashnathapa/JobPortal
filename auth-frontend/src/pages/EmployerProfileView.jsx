@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { fetchWithAuth } from "../services/apiClient.js";
 import "./EmployerProfileView.css";
 
 export default function EmployerProfileView() {
   const navigate = useNavigate();
+  const { username } = useParams();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -18,7 +19,11 @@ export default function EmployerProfileView() {
           return;
         }
 
-        const res = await fetchWithAuth(`/employer-profile/`, {
+        const endpoint = username 
+          ? `/view-employer-profile/${username}/` 
+          : `/employer-profile/`;
+
+        const res = await fetchWithAuth(endpoint, {
           method: "GET",
         });
 

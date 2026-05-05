@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getStudentProfile, updateStudentProfile } from "../services/studentAPI";
 import "./StudentProfile.css";
 
 export default function StudentProfile() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     full_name: "",
     university: "",
@@ -65,6 +67,9 @@ export default function StudentProfile() {
 
   return (
     <div className="profile-bg">
+      <button className="back-button" onClick={() => navigate(-1)}>
+        Back
+      </button>
       <div className="profile-header">My Profile</div>
 
       <div className="profile-card">

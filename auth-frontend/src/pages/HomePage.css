@@ -1,9 +1,8 @@
-@import url("https://fonts.googleapis.com/css2?family=Metrophobic&display=swap");
 
 .home-page {
   min-height: 100vh;
   background: #fff;
-  font-family: "Inter", sans-serif;
+  font-family: "Metrophobic", sans-serif;
   color: #181818;
 }
 
@@ -46,7 +45,6 @@
   max-width: 1260px;
   margin: 0 auto 28px;
   padding: 0 32px;
-  font-family: "Metrophobic", sans-serif;
   font-size: 30px;
   font-weight: 600;
   letter-spacing: normal;
@@ -130,7 +128,7 @@
 
 .latest-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 25px;
 }
 
@@ -139,6 +137,7 @@
   border-radius: 20px;
   padding: 30px;
   border: 2px solid #d9d9df;
+  font-family: 'Inter', sans-serif;
 }
 
 .latest-card h3 {
@@ -189,10 +188,25 @@
 .home-footer {
   background: linear-gradient(180deg, #030303 0%, #000 100%);
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer-links {
+  display: flex;
   justify-content: center;
   gap: 64px;
-  padding: 30px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
+  text-align: center;
 }
 
 .home-footer a {
@@ -200,6 +214,17 @@
   font-size: 1.2rem;
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+
+.footer-link-btn {
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 1.2rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 @media (max-width: 1200px) {

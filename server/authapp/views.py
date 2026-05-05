@@ -35,6 +35,7 @@ import hashlib
 import jwt
 from datetime import datetime, timedelta
 import os
+from collections import Counter
 from .scoring_logic import analyze_with_nlp
 
 
@@ -42,16 +43,14 @@ VALID_ROLES = ("student", "employer")
 
 
 def _student_cv_analysis_access(username: str) -> dict:
-    """Lifetime flag = legacy unlimited; otherwise each analysis consumes one credit."""
+    """Each analysis consumes one credit. No lifetime access."""
     u = users_collection.find_one(
         {"username": username, "role": "student"},
-        {"cv_analysis_lifetime_paid": 1, "cv_analysis_credits": 1},
+        {"cv_analysis_credits": 1},
     )
     if not u:
         return {"unlimited": False, "credits": 0}
     credits = int(u.get("cv_analysis_credits") or 0)
-    if u.get("cv_analysis_lifetime_paid"):
-        return {"unlimited": True, "credits": credits}
     return {"unlimited": False, "credits": credits}
 
 
@@ -102,6 +101,9 @@ def register(request):
     if users_collection.find_one({"username": username}):
         return Response({"error": "Username already exists"}, status=400)
 
+    if users_collection.find_one({"email": email}):
+        return Response({"error": "Email already exists"}, status=400)
+
     hashed_pw = hashlib.sha256(password.encode()).hexdigest()
 
 
@@ -148,8 +150,8 @@ def login(request):
     if hashed_pw != user["password"]:
         return Response({"error": "Invalid password"}, status=401)
 
-    if not user.get("is_verified"):
-        return Response({"error": "Email not verified"}, status=403)
+    if user.get("is_disabled", False):
+        return Response({"error": "Account is disabled. Contact admin."}, status=403)
 
     access = issue_access_token(username, user["role"])
     refresh_jwt, _ = issue_refresh_token(username)
@@ -239,33 +241,29 @@ def rate_cv(request):
         return Response({"error": "Provide a PDF and/or paste CV text (at least a few lines)."}, status=400)
 
     price_npr = getattr(settings, "CV_ANALYSIS_PRICE_NPR", 20)
-    access = _student_cv_analysis_access(user["username"])
-    if not access["unlimited"]:
-        dec = users_collection.find_one_and_update(
+    dec = users_collection.find_one_and_update(
+        {
+            "username": user["username"],
+            "role": "student",
+            "cv_analysis_credits": {"$gte": 1},
+        },
+        {"$inc": {"cv_analysis_credits": -1}},
+    )
+    if not dec:
+        return Response(
             {
-                "username": user["username"],
-                "role": "student",
-                "cv_analysis_credits": {"$gte": 1},
+                "payment_required": True,
+                "price_npr": price_npr,
+                "message": f"Pay with eSewa for one CV analysis ({price_npr} NPR per run).",
             },
-            {"$inc": {"cv_analysis_credits": -1}},
+            status=402,
         )
-        if not dec:
-            return Response(
-                {
-                    "payment_required": True,
-                    "price_npr": price_npr,
-                    "message": f"Pay with eSewa for one CV analysis ({price_npr} NPR per run).",
-                },
-                status=402,
-            )
-
     result = get_cv_feedback(cv_text)
     if result.get("error") and result["error"] != "GROQ_NOT_CONFIGURED":
-        if not access["unlimited"]:
-            users_collection.update_one(
-                {"username": user["username"], "role": "student"},
-                {"$inc": {"cv_analysis_credits": 1}},
-            )
+        users_collection.update_one(
+            {"username": user["username"], "role": "student"},
+            {"$inc": {"cv_analysis_credits": 1}},
+        )
         err = result["error"] if getattr(settings, "DEBUG", False) else "CV analysis failed. Try again."
         return Response({"error": err}, status=500)
 
@@ -361,11 +359,6 @@ def esewa_cv_init(request):
         return Response({"error": "Unauthorized"}, status=401)
     if user.get("role") != "student":
         return Response({"error": "Only students"}, status=403)
-    if _student_cv_analysis_access(user["username"])["unlimited"]:
-        return Response(
-            {"error": "already_paid", "message": "You already have unlimited CV analysis from a previous purchase."},
-            status=400,
-        )
 
     import uuid
 
@@ -601,6 +594,37 @@ def get_employer_profile(request):
     })
 
 
+@api_view(["GET"])
+def view_employer_profile(request, username):
+    """Allow anyone (especially students) to view an employer's profile"""
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+
+    db_user = users_collection.find_one({
+        "username": username,
+        "role": "employer"
+    })
+
+    if not db_user:
+        return Response({"error": "Employer not found"}, status=404)
+
+    profile = db_user.get("profile", {})
+
+    return Response({
+        "profile": {
+            "username": username,
+            "company_name": profile.get("company_name") or profile.get("companyName", ""),
+            "industry": profile.get("industry", ""),
+            "location": profile.get("location", ""),
+            "company_size": profile.get("company_size", ""),
+            "website": profile.get("website", ""),
+            "description": profile.get("description", ""),
+            "profile_picture": profile.get("profile_picture", "")
+        }
+    })
+
+
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])
 def update_employer_profile(request):
@@ -735,7 +759,7 @@ def post_listing(request):
 
     return Response({"message": "Listing posted successfully"})
 
-# ADD THESE TWO FUNCTIONS to your views.py
+
 
 @api_view(["GET"])
 def get_employer_listings(request):
@@ -1002,6 +1026,24 @@ def submit_application(request, listing_id):
     if existing:
         return Response({"error": "You have already applied to this job"}, status=400)
 
+    full_name = (request.data.get("full_name") or "").strip()
+    university = (request.data.get("university") or "").strip()
+    email = (request.data.get("email") or "").strip()
+    phone = (request.data.get("phone") or "").strip()
+    field_of_study = (request.data.get("field_of_study") or "").strip()
+    previous_experience = (request.data.get("previous_experience") or "").strip()
+
+    values_map = {
+        "full_name": full_name,
+        "university": university,
+        "email": email,
+        "phone": phone,
+        "field_of_study": field_of_study,
+    }
+    for _, value in values_map.items():
+        if not value:
+            return Response({"error": "Please fill out all the fields"}, status=400)
+
     # Handle CV upload
     cv_path = ""
     if 'cv' in request.FILES:
@@ -1029,12 +1071,12 @@ def submit_application(request, listing_id):
         "job_title": listing["job_title"],
         "employer_username": listing["employer_username"],
         "student_username": user["username"],
-        "full_name": request.data.get("full_name", ""),
-        "university": request.data.get("university", ""),
-        "email": request.data.get("email", ""),
-        "phone": request.data.get("phone", ""),
-        "field_of_study": request.data.get("field_of_study", ""),
-        "previous_experience": request.data.get("previous_experience", ""),
+        "full_name": full_name,
+        "university": university,
+        "email": email,
+        "phone": phone,
+        "field_of_study": field_of_study,
+        "previous_experience": previous_experience,
         "cv_path": cv_path,
         "status": "pending",
         "applied_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -1046,9 +1088,9 @@ def submit_application(request, listing_id):
     notification = {
         "employer_username": listing["employer_username"],
         "type": "new_application",
-        "student_name": request.data.get("full_name", ""),
+        "student_name": full_name,
         "job_title": listing["job_title"],
-        "message": f"New application from {request.data.get('full_name', 'a student')} for {listing['job_title']}",
+        "message": f"New application from {full_name or 'a student'} for {listing['job_title']}",
         "created_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
         "read": False
     }
@@ -1348,7 +1390,7 @@ def update_application_status(request, application_id):
     
     application = applications_collection.find_one({"_id": ObjectId(application_id)})
     
-    print("APPLICATION FOUND:", application)  # ADD THIS
+    print("APPLICATION FOUND:", application)
     
     if not application:
         return Response({"error": "Application not found"}, status=404)
@@ -1366,7 +1408,7 @@ def update_application_status(request, application_id):
         {"$set": {"status": status}}
     )
     
-    print("CREATING NOTIFICATION FOR:", application["student_username"])  # ADD THIS
+    print("CREATING NOTIFICATION FOR:", application["student_username"])
     
     # Create notification for student
     notification = {
@@ -1380,7 +1422,7 @@ def update_application_status(request, application_id):
     }
     
     result = notifications_collection.insert_one(notification)
-    print("NOTIFICATION CREATED WITH ID:", result.inserted_id)  # ADD THIS
+    print("NOTIFICATION CREATED WITH ID:", result.inserted_id)
     
     return Response({"message": f"Application {status}"})
 
@@ -1492,7 +1534,7 @@ def get_employer_applications(request):
             "_id": str(app["_id"]),
             "job_title": app.get("job_title"),
             "full_name": app.get("full_name"),
-            "student_username": app.get("student_username"), # Required for the 'View Profile' button
+            "student_username": app.get("student_username"),
             "email": app.get("email"),
             "phone": app.get("phone"),
             "university": app.get("university"),
@@ -1508,7 +1550,7 @@ def get_employer_applications(request):
 
 @api_view(["GET"])
 def get_student_application_stats(request):
-    """Application counts for the logged-in student. Active = not rejected."""
+    """Application counts for the logged-in student. Active = pending only."""
     user = get_user_from_token(request)
     if not user:
         return Response({"error": "Unauthorized"}, status=401)
@@ -1518,13 +1560,16 @@ def get_student_application_stats(request):
     username = user["username"]
     base_q = {"student_username": username}
     total = applications_collection.count_documents(base_q)
-    rejected = applications_collection.count_documents({**base_q, "status": "rejected"})
-    active_applications = max(0, total - rejected)
+    active_applications = applications_collection.count_documents({**base_q, "status": "pending"})
+    accepted_applications = applications_collection.count_documents({**base_q, "status": "accepted"})
+    rejected_applications = applications_collection.count_documents({**base_q, "status": "rejected"})
 
     return Response(
         {
             "active_applications": active_applications,
             "total_applications": total,
+            "accepted_applications": accepted_applications,
+            "rejected_applications": rejected_applications,
         }
     )
 
@@ -1587,6 +1632,7 @@ def get_admin_dashboard(request):
     total_students = users_collection.count_documents({"role": "student"})
     total_employers = users_collection.count_documents({"role": "employer"})
     verified_users = users_collection.count_documents({"is_verified": True})
+    disabled_users = users_collection.count_documents({"is_disabled": True})
 
     total_listings = listings_collection.count_documents({})
     active_listings = listings_collection.count_documents({"is_active": True})
@@ -1639,12 +1685,98 @@ def get_admin_dashboard(request):
     for item in recent_applications:
         item["_id"] = str(item["_id"])
 
+    # User management dataset (up to 100 recent users; frontend can filter/search these).
+    managed_users = list(
+        users_collection.find(
+            {},
+            {"username": 1, "role": 1, "email": 1, "is_verified": 1, "is_disabled": 1},
+        )
+        .sort("_id", -1)
+        .limit(100)
+    )
+    for item in managed_users:
+        item["_id"] = str(item["_id"])
+        item["is_disabled"] = bool(item.get("is_disabled", False))
+        created_at = item.get("_id")
+        try:
+            created_dt = datetime.fromtimestamp(int(created_at[:8], 16))
+            age_days = max(0, (datetime.utcnow() - created_dt).days)
+        except Exception:
+            age_days = 0
+        item["account_age_days"] = age_days
+        item["can_remove_unverified"] = (not item.get("is_verified", False)) and age_days >= 14
+
+    expired_listings_cursor = listings_collection.find(
+        {"deadline": {"$lt": datetime.utcnow().strftime("%Y-%m-%d"), "$ne": "", "$type": "string"}},
+        {"job_title": 1, "employer_username": 1, "deadline": 1, "is_active": 1}
+    ).sort("_id", -1)
+    
+    expired_listings = list(expired_listings_cursor)
+    for item in expired_listings:
+        item["_id"] = str(item["_id"])
+        employer = users_collection.find_one(
+            {"username": item.get("employer_username", ""), "role": "employer"},
+            {"profile": 1},
+        )
+        if employer and isinstance(employer.get("profile"), dict):
+            item["company_name"] = employer["profile"].get("company_name", "Unknown Company")
+        else:
+            item["company_name"] = "Unknown Company"
+
+    # Reports and analytics.
+    today = datetime.utcnow().date()
+    day_labels = [
+        (today - timedelta(days=offset)).strftime("%Y-%m-%d")
+        for offset in range(6, -1, -1)
+    ]
+    day_set = set(day_labels)
+    users_by_day = {day: 0 for day in day_labels}
+    listings_by_day = {day: 0 for day in day_labels}
+    applications_by_day = {day: 0 for day in day_labels}
+
+    for u in users_collection.find({}, {"_id": 1}):
+        created_day = u["_id"].generation_time.strftime("%Y-%m-%d")
+        if created_day in day_set:
+            users_by_day[created_day] += 1
+
+    job_type_counter = Counter()
+    location_counter = Counter()
+    for listing in listings_collection.find({}, {"posted_at": 1, "job_type": 1, "location": 1}):
+        posted_at = (listing.get("posted_at") or "").strip()
+        posted_day = posted_at[:10] if len(posted_at) >= 10 else ""
+        if posted_day in day_set:
+            listings_by_day[posted_day] += 1
+        jt = (listing.get("job_type") or "").strip()
+        loc = (listing.get("location") or "").strip()
+        if jt:
+            job_type_counter[jt] += 1
+        if loc:
+            location_counter[loc] += 1
+
+    for app in applications_collection.find({}, {"applied_at": 1}):
+        applied_at = (app.get("applied_at") or "").strip()
+        applied_day = applied_at[:10] if len(applied_at) >= 10 else ""
+        if applied_day in day_set:
+            applications_by_day[applied_day] += 1
+
+    trend = []
+    for day in day_labels:
+        trend.append(
+            {
+                "date": day,
+                "users": users_by_day[day],
+                "listings": listings_by_day[day],
+                "applications": applications_by_day[day],
+            }
+        )
+
     return Response({
         "stats": {
             "users_total": total_users,
             "students_total": total_students,
             "employers_total": total_employers,
             "verified_users": verified_users,
+            "disabled_users": disabled_users,
             "listings_total": total_listings,
             "listings_active": active_listings,
             "listings_expired_active": expired_active_listings,
@@ -1658,8 +1790,44 @@ def get_admin_dashboard(request):
         },
         "recent_users": recent_users,
         "recent_listings": recent_listings,
+        "expired_listings": expired_listings,
         "recent_applications": recent_applications,
+        "users": managed_users,
+        "reports": {
+            "trend_last_7_days": trend,
+            "top_job_types": [
+                {"label": label, "count": count}
+                for label, count in job_type_counter.most_common(5)
+            ],
+            "top_locations": [
+                {"label": label, "count": count}
+                for label, count in location_counter.most_common(5)
+            ],
+        },
     })
+
+
+@api_view(["DELETE"])
+def admin_delete_listing(request, listing_id):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user.get("role") != "admin":
+        return Response({"error": "Admin access required"}, status=403)
+
+    from bson.objectid import ObjectId
+    try:
+        obj_id = ObjectId(listing_id)
+    except Exception:
+        return Response({"error": "Invalid listing ID format"}, status=400)
+
+    res = listings_collection.delete_one({"_id": obj_id})
+    if res.deleted_count == 1:
+        # Also clean up associated applications
+        applications_collection.delete_many({"listing_id": listing_id})
+        return Response({"message": "Listing deleted successfully"}, status=200)
+    else:
+        return Response({"error": "Listing not found"}, status=404)
 
 
 @api_view(["POST"])
@@ -1687,6 +1855,63 @@ def admin_toggle_listing(request, listing_id):
 
     listings_collection.update_one({"_id": oid}, {"$set": {"is_active": is_active}})
     return Response({"message": "Listing status updated", "is_active": is_active})
+
+
+@api_view(["POST"])
+def admin_toggle_user_status(request, username):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user.get("role") != "admin":
+        return Response({"error": "Admin access required"}, status=403)
+
+    if username == user.get("username"):
+        return Response({"error": "You cannot disable your own account."}, status=400)
+
+    target = users_collection.find_one({"username": username}, {"role": 1})
+    if not target:
+        return Response({"error": "User not found"}, status=404)
+    if target.get("role") == "admin":
+        return Response({"error": "Admin accounts cannot be changed from this action."}, status=400)
+
+    is_disabled = request.data.get("is_disabled")
+    if not isinstance(is_disabled, bool):
+        return Response({"error": "is_disabled must be boolean"}, status=400)
+
+    users_collection.update_one(
+        {"username": username},
+        {"$set": {"is_disabled": is_disabled}},
+    )
+    return Response({"message": "User status updated", "is_disabled": is_disabled})
+
+
+@api_view(["POST"])
+def admin_remove_unverified_user(request, username):
+    user = get_user_from_token(request)
+    if not user:
+        return Response({"error": "Unauthorized"}, status=401)
+    if user.get("role") != "admin":
+        return Response({"error": "Admin access required"}, status=403)
+
+    target = users_collection.find_one({"username": username})
+    if not target:
+        return Response({"error": "User not found"}, status=404)
+    if target.get("role") == "admin":
+        return Response({"error": "Admin accounts cannot be removed from this action."}, status=400)
+    if target.get("is_verified", False):
+        return Response({"error": "Only unverified users can be removed."}, status=400)
+
+    created_at = target.get("_id")
+    try:
+        created_dt = datetime.fromtimestamp(int(str(created_at)[:8], 16))
+        age_days = max(0, (datetime.utcnow() - created_dt).days)
+    except Exception:
+        age_days = 0
+    if age_days < 14:
+        return Response({"error": "User can be removed only after 14 days if still unverified."}, status=400)
+
+    users_collection.delete_one({"username": username})
+    return Response({"message": "Unverified user removed"})
 
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])

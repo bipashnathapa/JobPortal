@@ -33,8 +33,8 @@ export default function HomePage() {
 
   const latestListings = useMemo(() => {
     return [...listings]
-      .sort((a, b) => new Date(b.posted_at || 0) - new Date(a.posted_at || 0))
-      .slice(0, 4);
+      .sort((a, b) => new Date((b.posted_at || "").replace(" ", "T") + "Z") - new Date((a.posted_at || "").replace(" ", "T") + "Z"))
+      .slice(0, 6);
   }, [listings]);
 
   const locationOptions = useMemo(() => {
@@ -58,7 +58,8 @@ export default function HomePage() {
 
   const postedAgo = (postedAt) => {
     if (!postedAt) return "Posted recently";
-    const posted = new Date(postedAt);
+    const dateStr = postedAt.includes('T') ? postedAt : `${postedAt.replace(' ', 'T')}Z`;
+    const posted = new Date(dateStr);
     const now = new Date();
     const diffHours = Math.max(1, Math.floor((now - posted) / (1000 * 60 * 60)));
     if (diffHours < 24) return `Posted ${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
@@ -68,6 +69,14 @@ export default function HomePage() {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    
+    // If the search bar and all filters are completely empty, 
+    // force the listings page to show "no listings available"
+    if (!keyword.trim() && !location && !type && !category) {
+      navigate("/listings?search=__NO_RESULTS_FOUND__");
+      return;
+    }
+
     const params = new URLSearchParams();
     if (keyword.trim()) params.set("search", keyword.trim());
     if (location) params.set("location", location);
@@ -141,9 +150,14 @@ export default function HomePage() {
       </section>
 
       <footer className="home-footer">
-        <a href="#features">Features</a>
-        <a href="#contact">Contact us</a>
-        <a href="#about">About us</a>
+        <div className="footer-links">
+          <button className="footer-link-btn" onClick={() => navigate("/features")}>Features</button>
+          <button className="footer-link-btn" onClick={() => navigate("/contact")}>Contact us</button>
+          <button className="footer-link-btn" onClick={() => navigate("/about")}>About us</button>
+        </div>
+        <div className="footer-brand">
+          <p>&copy; {new Date().getFullYear()} StepUp. All rights reserved.</p>
+        </div>
       </footer>
     </div>
   );

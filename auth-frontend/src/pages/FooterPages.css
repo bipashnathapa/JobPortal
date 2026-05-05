@@ -1,0 +1,43 @@
+.footer-page {
+  min-height: 100vh;
+  background: #f3f4f7;
+  color: #171717;
+  font-family: "Metrophobic", sans-serif;
+  padding: 28px 20px 40px;
+}
+
+.footer-page-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid #e4e6ee;
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.footer-page h1 {
+  margin: 0 0 10px 0;
+  font-size: 2rem;
+}
+
+.footer-page p {
+  margin: 0 0 16px 0;
+  color: #3f4350;
+  line-height: 1.6;
+}
+
+.footer-page ul {
+  margin: 0 0 18px 18px;
+  color: #252933;
+  line-height: 1.7;
+}
+
+.footer-page .back-btn {
+  border: none;
+  background: #121212;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}

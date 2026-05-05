@@ -4,6 +4,18 @@ import { getCvAnalysisHistory } from "../services/studentAPI";
 import "./CVFeedback.css";
 import "./CvAnalysisHistory.css";
 
+const formatText = (text) => {
+  if (!text) return null;
+  // Split by **bold text**
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} style={{ color: "#141414" }}>{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+};
+
 export default function CvAnalysisHistory() {
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
@@ -58,11 +70,11 @@ export default function CvAnalysisHistory() {
                 {!row.groq_live && (
                   <p className="cv-history-demo">Demo / API not configured for this run</p>
                 )}
-                {row.summary && <p className="cv-history-summary">{row.summary}</p>}
+                {row.summary && <p className="cv-history-summary">{formatText(row.summary)}</p>}
                 {row.suggestions && row.suggestions.length > 0 && (
                   <ul className="cv-history-suggestions">
                     {row.suggestions.map((s, i) => (
-                      <li key={i}>{s}</li>
+                      <li key={i} style={{ marginBottom: "0.5rem" }}>{formatText(s)}</li>
                     ))}
                   </ul>
                 )}

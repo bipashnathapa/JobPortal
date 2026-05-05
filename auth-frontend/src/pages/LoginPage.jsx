@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../services/authAPI";
 import "./AuthPage.css";
 import bg from "../assets/bg.jpg";
@@ -10,31 +10,42 @@ const LoginPage = () => {
     username: "",
     password: "",
   });
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleLogin = async () => {
+    setLoggingIn(true);
+    setMessage("");
+    setMessageType("");
     const res = await loginUser(form);
-
-    console.log("Login response:", res); 
 
     if (res.access && res.role) {
       localStorage.setItem("access", res.access);
       localStorage.setItem("username", form.username);
       localStorage.setItem("role", res.role);
 
-      if (res.role === "student") {
-        navigate("/home", { replace: true });
-      } else if (res.role === "admin") {
-        navigate("/admin", { replace: true });
-      } else {
-        navigate("/employer", { replace: true });
-      }
+      setMessage("Login successful");
+      setMessageType("success");
+
+      setTimeout(() => {
+        if (res.role === "student") {
+          navigate("/home", { replace: true });
+        } else if (res.role === "admin") {
+          navigate("/admin", { replace: true });
+        } else {
+          navigate("/employer", { replace: true });
+        }
+      }, 700);
     } else {
-      alert(res.error || "Login failed");
+      setMessage(res.error || "Login failed");
+      setMessageType("error");
     }
+    setLoggingIn(false);
   };
 
   return (
@@ -60,9 +71,13 @@ const LoginPage = () => {
           />
 
           <div className="button-container">
-            <button type="button" onClick={handleLogin}>
-              Login
+            {message && <p className={`auth-message ${messageType}`}>{message}</p>}
+            <button type="button" onClick={handleLogin} disabled={loggingIn}>
+              {loggingIn ? "Logging in..." : "Login"}
             </button>
+          </div>
+          <div className="auth-link-container">
+            Don't have an account? <Link to="/" className="auth-link">Register</Link>
           </div>
         </form>
       </div>

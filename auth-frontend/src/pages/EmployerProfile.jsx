@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getEmployerProfile, updateEmployerProfile } from "../services/employerAPI";
 import "./EmployerProfile.css";
 
 export default function EmployerProfile() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     company_name: "",
     industry: "",
@@ -93,6 +95,9 @@ export default function EmployerProfile() {
 
   return (
     <div className="profile-bg">
+      <button className="back-button" onClick={() => navigate(-1)}>
+        Back
+      </button>
       <div className="profile-header">Company Profile</div>
 
       <div className="profile-card">

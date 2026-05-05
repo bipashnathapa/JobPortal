@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Metrophobic&display=swap");
 
 .app-detail-container {
   min-height: 100vh;
   background: linear-gradient(to bottom, #e8e8e8 0%, #f5f5f5 50%, #e8e8e8 100%);
-  font-family: 'Inter', sans-serif;
+  font-family: "Metrophobic", sans-serif;
   padding: 20px;
 }
 

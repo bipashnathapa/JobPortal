@@ -9,7 +9,8 @@ def send_verification_email(username, email):
         settings.SECRET_KEY,
         algorithm="HS256"
     )
-    verify_link = f"http://127.0.0.1:8000/api/verify-email/?token={token}"
+    base_url = getattr(settings, "BACKEND_PUBLIC_URL", "http://127.0.0.1:8000").rstrip("/")
+    verify_link = f"{base_url}/api/verify-email/?token={token}"
     send_mail(
         "Verify your email",
         f"Click this link to verify: {verify_link}",

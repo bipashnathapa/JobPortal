@@ -87,21 +87,6 @@ export default function StudentDashboard() {
     navigate("/resume-scorer");
   };
 
-  const handleMarkAsRead = async (notificationId) => {
-    try {
-      await fetchWithAuth(`/notification/${notificationId}/read/`, {
-        method: "POST",
-      });
-      fetchNotifications();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Separate notifications into unread and read
-  const unreadNotifications = notifications.filter(notif => !notif.read);
-  const readNotifications = notifications.filter(notif => notif.read);
-
   const getNotificationMessage = (notification, isReadSection = false) => {
     if (notification.type === "interview_proposed") {
       return notification.message || "Interview invitation received. Please review and respond.";
@@ -121,8 +106,27 @@ export default function StudentDashboard() {
     return notification.message || "You have a new update.";
   };
 
+  const getActivityTitle = (notification) => {
+    if (notification.type === "application_status") return "Application Reviewed";
+    if (notification.type === "interview_proposed") return "Interview Invitation";
+    return "Application submitted";
+  };
+
+  const formatActivityTime = (createdAt) => {
+    const created = new Date(createdAt);
+    const diffMs = Date.now() - created.getTime();
+    if (Number.isNaN(created.getTime()) || diffMs < 60 * 1000) return "Just now";
+    const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
+    if (diffHours < 1) return "Just now";
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  };
+
+  const latestNotifications = notifications.slice(0, 2);
+
   return (
-    <div className="new-dash-container">
+    <div className="new-dash-container student-dashboard-root">
       <nav className="dash-navbar">
         <button className="nav-btn" onClick={() => navigate("/home")}>Home</button>
         <button className="nav-btn active">Dashboard</button>
@@ -169,102 +173,57 @@ export default function StudentDashboard() {
 
       <div className="stats-section">
         <div className="stat-card">
-          <h3 className="stat-number">{activeApplicationsCount}</h3>
-          <p className="stat-label">Active applications</p>
+          <p className="stat-label">Active applications: {activeApplicationsCount}</p>
         </div>
         <div className="stat-card">
-          <h3 className="stat-number">{savedJobsCount}</h3>
-          <p className="stat-label">Saved jobs</p>
+          <p className="stat-label">Saved jobs: {savedJobsCount}</p>
         </div>
       </div>
 
-      {/* Notifications Section */}
       <div className="notifications-container">
-        <div className="notifications-dash-header-row">
-          <h2 className="notifications-title notifications-main-heading">Notifications</h2>
-          <button
-            type="button"
-            className="view-all-notifications-btn"
-            onClick={() => navigate("/student/notifications")}
-          >
-            View all notifications
-          </button>
-        </div>
+        <h2 className="notifications-title notifications-main-heading">Latest activity</h2>
 
         {notifications.length === 0 ? (
           <p className="notifications-empty-dash">No notifications yet.</p>
         ) : (
           <>
-          {/* Unread Notifications */}
-          {unreadNotifications.length > 0 && (
-            <>
-              <h2 className="notifications-title">
-                New Notifications ({unreadNotifications.length})
-              </h2>
-              <div className="notifications-list">
-                {unreadNotifications.map((notification) => (
-                  <div 
-                    key={notification._id} 
-                    className={`notification-card unread ${notification.status}`}
-                  >
-                    <div className="notification-content">
-                      <div className="notification-header">
-                        <h4 className="notification-job">{notification.job_title}</h4>
-                        <span className="new-badge">NEW</span>
+            <div className="notifications-list">
+              {latestNotifications.map((notification) => (
+                <div
+                  key={notification._id}
+                  className={`notification-card ${notification.status || ""}`}
+                >
+                  <div className="notification-content">
+                    <div className="notification-row">
+                      <div>
+                        <h4 className="notification-job">{getActivityTitle(notification)}</h4>
+                        <p className="notification-message">
+                          {getNotificationMessage(notification, false)}
+                        </p>
                       </div>
-                      <p className="notification-message">
-                        {getNotificationMessage(notification, false)}
-                      </p>
                       <span className="notification-time">
-                        {new Date(notification.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <button 
-                      className="mark-read-btn"
-                      onClick={() => handleMarkAsRead(notification._id)}
-                      title="Mark as read"
-                    >
-                      Mark
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Read Notifications */}
-          {readNotifications.length > 0 && (
-            <>
-              <h2 className="notifications-title read-title">
-                Earlier Notifications ({readNotifications.length})
-              </h2>
-              <div className="notifications-list read-notifications">
-                {readNotifications.map((notification) => (
-                  <div 
-                    key={notification._id} 
-                    className={`notification-card read ${notification.status}`}
-                  >
-                    <div className="notification-content">
-                      <h4 className="notification-job">{notification.job_title}</h4>
-                      <p className="notification-message">
-                        {getNotificationMessage(notification, true)}
-                      </p>
-                      <span className="notification-time">
-                        {new Date(notification.created_at).toLocaleDateString()}
+                        {formatActivityTime(notification.created_at)}
                       </span>
                     </div>
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                </div>
+              ))}
+            </div>
 
-          {pagination.total_count > 200 && (
-            <p className="notifications-truncation-note">
-              Showing your 200 most recent notifications here. Open &quot;View all notifications&quot; for
-              paginated history.
-            </p>
-          )}
+            <button
+              type="button"
+              className="view-all-notifications-btn"
+              onClick={() => navigate("/student/notifications")}
+            >
+              View all notifications
+            </button>
+
+            {pagination.total_count > 200 && (
+              <p className="notifications-truncation-note">
+                Showing your 200 most recent notifications here. Open &quot;View all notifications&quot; for
+                paginated history.
+              </p>
+            )}
           </>
         )}
       </div>

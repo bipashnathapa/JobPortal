@@ -116,7 +116,7 @@ export default function StudentNotifications() {
                         </div>
                         <p className="notification-message">{getNotificationMessage(notification, false)}</p>
                         <span className="notification-time">
-                          {new Date(notification.created_at).toLocaleString()}
+                          {new Date((notification.created_at || "").replace(" ", "T") + "Z").toLocaleString()}
                         </span>
                       </div>
                       <button
@@ -148,7 +148,7 @@ export default function StudentNotifications() {
                         <h4 className="notification-job">{notification.job_title}</h4>
                         <p className="notification-message">{getNotificationMessage(notification, true)}</p>
                         <span className="notification-time">
-                          {new Date(notification.created_at).toLocaleString()}
+                          {new Date((notification.created_at || "").replace(" ", "T") + "Z").toLocaleString()}
                         </span>
                       </div>
                     </div>

@@ -1,4 +1,4 @@
-/* Keep student dashboard interactions static (no bounce/shift effects). */
+
 .new-dash-container .action-btn:hover,
 .new-dash-container .action-btn:active,
 .new-dash-container .stat-card:hover,
@@ -249,6 +249,159 @@
       align-self: flex-end;
     }
   }
+
+.student-dashboard-root .stats-section {
+  max-width: 940px;
+  margin: 0 auto 14px;
+  padding: 46px 56px 34px;
+  background: #2c2525;
+  border-radius: 34px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 72px;
+}
+
+.student-dashboard-root .stat-card {
+  min-height: 132px;
+  border: none;
+  border-radius: 28px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  padding: 24px;
+}
+
+.student-dashboard-root .stat-card .stat-label {
+  margin: 0;
+  color: #111;
+  font-size: 1rem;
+  font-weight: 400;
+  text-align: center;
+}
+
+.student-dashboard-root .notifications-container {
+  max-width: 940px;
+  margin: 0 auto 44px;
+  padding: 44px 28px 38px;
+  background: #2c2525;
+  border-radius: 34px;
+}
+
+.student-dashboard-root .notifications-main-heading {
+  margin: 0 0 28px 76px !important;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+.student-dashboard-root .notifications-list {
+  width: 100%;
+  min-height: 238px;
+  padding: 24px 110px;
+  border-radius: 28px;
+  background: #fff;
+  gap: 26px;
+}
+
+.student-dashboard-root .notification-card {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0 0 17px;
+  display: block;
+}
+
+.student-dashboard-root .notification-card:not(:last-child) {
+  border-bottom: 1px solid #c8c8d0;
+}
+
+.student-dashboard-root .notification-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.student-dashboard-root .notification-job {
+  margin: 0;
+  color: #050505;
+  font-size: 0.92rem;
+  font-weight: 700;
+  white-space: normal;
+}
+
+.student-dashboard-root .notification-message {
+  color: #050505;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.student-dashboard-root .notification-time {
+  margin: 0;
+  color: #050505;
+  font-size: 0.75rem;
+}
+
+.student-dashboard-root .view-all-notifications-btn {
+  min-width: 254px;
+  min-height: 68px;
+  margin: 26px 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: #050505;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.student-dashboard-root .notifications-empty-dash {
+  color: #fff;
+  margin-left: 76px;
+}
+
+@media (max-width: 768px) {
+  .student-dashboard-root .stats-section {
+    padding: 28px;
+    gap: 20px;
+    border-radius: 28px;
+  }
+
+  .student-dashboard-root .stat-card {
+    min-height: 104px;
+    border-radius: 24px;
+  }
+
+  .student-dashboard-root .notifications-container {
+    padding: 34px 20px 28px;
+    border-radius: 28px;
+  }
+
+  .student-dashboard-root .notifications-main-heading {
+    margin-left: 30px !important;
+  }
+
+  .student-dashboard-root .notifications-list {
+    min-height: 210px;
+    padding: 22px 34px;
+    border-radius: 24px;
+  }
+
+  .student-dashboard-root .view-all-notifications-btn {
+    min-width: 190px;
+    min-height: 54px;
+  }
+}
+
+@media (max-width: 560px) {
+  .student-dashboard-root .stats-section {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* My applications (full page + dashboard link target) */
 .student-applications-page-wrap {

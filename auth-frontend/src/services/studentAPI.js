@@ -1,7 +1,7 @@
 // src/services/studentAPI.js
 import { API_BASE, fetchWithAuth } from "./apiClient.js";
 
-// Get the student's profile using JWT token (no need to pass username)
+// Get the student's profile using JWT token 
 export const getStudentApplications = async () => {
   try {
     const res = await fetchWithAuth(`${API_BASE}/student-applications/`, {
@@ -122,7 +122,7 @@ export const initEsewaCvPayment = async () => {
   }
 };
 
-/** NLP resume score from PDF (spaCy backend). Student JWT required. */
+/** NLP resume score from PDF. Student JWT required. */
 export const scoreResumeNlp = async (file) => {
   try {
     const formData = new FormData();

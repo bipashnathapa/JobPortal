@@ -1,4 +1,4 @@
-"""Short-lived access JWT + refresh JWT stored in Mongo (revocable)."""
+"""Short-lived access JWT + refresh JWT stored in Mongo."""
 import uuid
 
 import jwt

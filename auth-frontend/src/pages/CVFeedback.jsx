@@ -3,6 +3,17 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { rateCV, getCvPaymentStatus, initEsewaCvPayment } from "../services/studentAPI";
 import "./CVFeedback.css";
 
+const formatText = (text) => {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} style={{ color: "#141414" }}>{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+};
+
 function FeedbackResultBlock({ result }) {
   if (!result) return null;
   const hasSuggestions = result.suggestions && result.suggestions.length > 0;
@@ -14,13 +25,13 @@ function FeedbackResultBlock({ result }) {
           <h3>Suggestions</h3>
           <ul>
             {result.suggestions.map((s, i) => (
-              <li key={i}>{s}</li>
+              <li key={i} style={{ marginBottom: "0.5rem" }}>{formatText(s)}</li>
             ))}
           </ul>
         </div>
       )}
       {!hasSuggestions && fallbackText && (
-        <p className="cv-feedback-config">{fallbackText}</p>
+        <p className="cv-feedback-config">{formatText(fallbackText)}</p>
       )}
     </div>
   );
@@ -34,14 +45,13 @@ export default function CVFeedback() {
   const [loading, setLoading] = useState(false);
   const [checkingPay, setCheckingPay] = useState(true);
   const [credits, setCredits] = useState(null);
-  const [unlimited, setUnlimited] = useState(false);
   const [priceNpr, setPriceNpr] = useState(20);
   const [payLoading, setPayLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [banner, setBanner] = useState("");
 
-  const canAnalyze = unlimited || (typeof credits === "number" && credits > 0);
+  const canAnalyze = typeof credits === "number" && credits > 0;
 
   useEffect(() => {
     const payment = searchParams.get("payment");
@@ -60,7 +70,6 @@ export default function CVFeedback() {
       if (!s.error) {
         if (s.price_npr != null) setPriceNpr(s.price_npr);
         setCredits(typeof s.credits === "number" ? s.credits : 0);
-        setUnlimited(!!s.unlimited);
       }
     })();
   }, [searchParams, setSearchParams]);
@@ -74,11 +83,9 @@ export default function CVFeedback() {
       if (s.error) {
         setError(s.error);
         setCredits(0);
-        setUnlimited(false);
       } else {
         if (s.price_npr != null) setPriceNpr(s.price_npr);
         setCredits(typeof s.credits === "number" ? s.credits : 0);
-        setUnlimited(!!s.unlimited);
       }
       setCheckingPay(false);
     })();
@@ -115,7 +122,6 @@ export default function CVFeedback() {
     if (!s.error) {
       if (s.price_npr != null) setPriceNpr(s.price_npr);
       setCredits(typeof s.credits === "number" ? s.credits : 0);
-      setUnlimited(!!s.unlimited);
     }
   };
 
@@ -133,7 +139,7 @@ export default function CVFeedback() {
       return;
     }
 
-    if (!unlimited && (credits == null || credits < 1)) {
+    if (credits == null || credits < 1) {
       setError(`Pay NPR ${priceNpr} with eSewa for one CV analysis credit, then try again.`);
       return;
     }
@@ -215,13 +221,10 @@ export default function CVFeedback() {
       <div className="cv-feedback-card">
         <h1>CV feedback</h1>
         {banner && <p className="cv-feedback-banner">{banner}</p>}
-        {!unlimited && credits != null && credits > 0 && (
+        {credits != null && credits > 0 && (
           <p className="cv-feedback-desc cv-feedback-credits">
             {credits === 1 ? "1 analysis credit — submit uses it." : `${credits} analysis credits — each submit uses one.`}
           </p>
-        )}
-        {unlimited && (
-          <p className="cv-feedback-desc cv-feedback-credits">Unlimited CV analyses on your account.</p>
         )}
         <p className="cv-feedback-desc">
           Upload your CV (PDF) or paste the text below. Get improvement suggestions from the AI.
