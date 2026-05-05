@@ -9,4 +9,4 @@ pip install django djangorestframework django-cors-headers pymongo python-dotenv
 python -m spacy download en_core_web_sm
 
 # 3. Collect static files for production
-python manage.py collectstatic --no-input
+python server/manage.py collectstatic --no-input
