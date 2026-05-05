@@ -559,7 +559,10 @@ def view_student_profile(request, username):
     # Support both snake_case (new) and camelCase (legacy)
     backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "https://stepup-backend-0he9.onrender.com").rstrip("/")
     profile_pic = profile.get("profile_picture", "")
+    
     if profile_pic and not profile_pic.startswith("http"):
+        if not profile_pic.startswith("/"):
+            profile_pic = f"/{profile_pic}"
         profile_pic = f"{backend_url}{profile_pic}"
 
     return Response({
@@ -597,7 +600,10 @@ def get_employer_profile(request):
 
     backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "https://stepup-backend-0he9.onrender.com").rstrip("/")
     profile_pic = profile.get("profile_picture", "")
+    
     if profile_pic and not profile_pic.startswith("http"):
+        if not profile_pic.startswith("/"):
+            profile_pic = f"/{profile_pic}"
         profile_pic = f"{backend_url}{profile_pic}"
 
     return Response({
