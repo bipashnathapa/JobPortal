@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchWithAuth } from "../services/apiClient.js";
+import { fetchWithAuth, resolveMediaUrl } from "../services/apiClient.js";
 import "./StudentProfileView.css";
 
 export default function StudentProfileView() {
@@ -76,7 +76,7 @@ export default function StudentProfileView() {
         {profile.profile_picture && (
           <div className="profile-view-picture-section">
             <img
-              src={`http://127.0.0.1:8000${profile.profile_picture}`}
+              src={resolveMediaUrl(profile.profile_picture)}
               alt="Profile"
               className="profile-view-picture"
             />

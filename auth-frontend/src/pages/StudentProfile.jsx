@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStudentProfile, updateStudentProfile } from "../services/studentAPI";
+import { resolveMediaUrl } from "../services/apiClient.js";
 import "./StudentProfile.css";
 
 export default function StudentProfile() {
@@ -77,7 +78,7 @@ export default function StudentProfile() {
         {/* Display existing image */}
         {typeof form.profile_picture === "string" && (
           <img
-            src={`http://127.0.0.1:8000${form.profile_picture}`}
+            src={resolveMediaUrl(form.profile_picture)}
             alt="Profile"
             className="profile-image"
           />

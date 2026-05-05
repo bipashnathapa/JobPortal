@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { fetchWithAuth } from "../services/apiClient.js";
+import { fetchWithAuth, resolveMediaUrl } from "../services/apiClient.js";
 import { toast } from "react-hot-toast";
 import "./ApplicationDetail.css";
 
@@ -25,7 +25,7 @@ export default function ApplicationDetail() {
   }
 
   const handleDownloadCV = () => {
-    const cvUrl = `http://127.0.0.1:8000${application.cv_path}`;
+    const cvUrl = resolveMediaUrl(application.cv_path);
     window.open(cvUrl, '_blank');
   };
 

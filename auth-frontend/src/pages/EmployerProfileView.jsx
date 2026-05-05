@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchWithAuth } from "../services/apiClient.js";
+import { fetchWithAuth, resolveMediaUrl } from "../services/apiClient.js";
 import "./EmployerProfileView.css";
 
 export default function EmployerProfileView() {
@@ -79,7 +79,7 @@ export default function EmployerProfileView() {
         {profile.profile_picture && (
           <div className="profile-view-picture-section">
             <img
-              src={`http://127.0.0.1:8000${profile.profile_picture}`}
+              src={resolveMediaUrl(profile.profile_picture)}
               alt="Company Logo"
               className="profile-view-picture"
             />

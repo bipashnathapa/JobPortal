@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getEmployerProfile, updateEmployerProfile } from "../services/employerAPI";
+import { resolveMediaUrl } from "../services/apiClient.js";
 import "./EmployerProfile.css";
 
 export default function EmployerProfile() {
@@ -37,7 +38,7 @@ export default function EmployerProfile() {
         
         // Set initial image preview if profile picture exists
         if (res.profile.profile_picture) {
-          setImagePreview(`http://127.0.0.1:8000${res.profile.profile_picture}`);
+          setImagePreview(resolveMediaUrl(res.profile.profile_picture));
         }
       } else {
         setMessage(res.error || "Failed to load profile");
@@ -86,7 +87,7 @@ export default function EmployerProfile() {
       
       // Update image preview with saved image path
       if (res.profile_picture) {
-        setImagePreview(`http://127.0.0.1:8000${res.profile_picture}`);
+        setImagePreview(resolveMediaUrl(res.profile_picture));
       }
     } else {
       setMessage(res.error || "Failed to save profile");
