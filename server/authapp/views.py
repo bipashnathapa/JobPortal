@@ -552,6 +552,11 @@ def view_student_profile(request, username):
     profile = db_user.get("profile", {})
 
     # Support both snake_case (new) and camelCase (legacy)
+    backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "https://stepup-backend-0he9.onrender.com").rstrip("/")
+    profile_pic = profile.get("profile_picture", "")
+    if profile_pic and not profile_pic.startswith("http"):
+        profile_pic = f"{backend_url}{profile_pic}"
+
     return Response({
         "profile": {
             "username": username,
@@ -560,7 +565,7 @@ def view_student_profile(request, username):
             "phone": profile.get("phone", ""),
             "bio": profile.get("bio", ""),
             "skills": profile.get("skills", ""),
-            "profile_picture": profile.get("profile_picture", "")
+            "profile_picture": profile_pic
         }
     })
 
@@ -585,7 +590,11 @@ def get_employer_profile(request):
 
     profile = db_user.get("profile", {})
 
-    
+    backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "https://stepup-backend-0he9.onrender.com").rstrip("/")
+    profile_pic = profile.get("profile_picture", "")
+    if profile_pic and not profile_pic.startswith("http"):
+        profile_pic = f"{backend_url}{profile_pic}"
+
     return Response({
         "profile": {
             "company_name": profile.get("company_name") or profile.get("companyName", ""),
@@ -594,7 +603,7 @@ def get_employer_profile(request):
             "company_size": profile.get("company_size", ""),
             "website": profile.get("website", ""),
             "description": profile.get("description", ""),
-            "profile_picture": profile.get("profile_picture", "")
+            "profile_picture": profile_pic
         }
     })
 
