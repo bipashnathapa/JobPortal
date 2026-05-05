@@ -16,7 +16,7 @@ def send_verification_email(username, email):
         f"Click this link to verify: {verify_link}",
         settings.DEFAULT_FROM_EMAIL,
         [email],
-        fail_silently=False
+        fail_silently=True
     )
 
 
@@ -36,7 +36,7 @@ def send_interview_proposed_email(student_email, student_username, job_title, sl
         ),
         settings.DEFAULT_FROM_EMAIL,
         [student_email],
-        fail_silently=False,
+        fail_silently=True,
     )
 
 
@@ -50,5 +50,5 @@ def send_interview_response_email(employer_email, employer_username, student_use
         ),
         settings.DEFAULT_FROM_EMAIL,
         [employer_email],
-        fail_silently=False,
+        fail_silently=True,
     )
