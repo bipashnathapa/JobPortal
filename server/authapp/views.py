@@ -1533,8 +1533,13 @@ def get_employer_applications(request):
     # Fetch applications where the employer_username matches the current user
     apps_cursor = applications_collection.find({"employer_username": user["username"]})
     
+    backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "").rstrip("/")
     applications = []
     for app in apps_cursor:
+        cv_path = app.get("cv_path") or ""
+        if cv_path and not cv_path.startswith("http"):
+            cv_path = f"{backend_url}{cv_path}"
+
         applications.append({
             "_id": str(app["_id"]),
             "job_title": app.get("job_title"),
@@ -1545,7 +1550,7 @@ def get_employer_applications(request):
             "university": app.get("university"),
             "field_of_study": app.get("field_of_study"),
             "previous_experience": app.get("previous_experience"),
-            "cv_path": app.get("cv_path"),
+            "cv_path": cv_path,
             "status": app.get("status", "pending"),
             "applied_at": app.get("applied_at")
         })
