@@ -454,7 +454,7 @@ def get_profile(request):
     profile = db_user.get("profile", {})
 
 
-    backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "").rstrip("/")
+    backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "https://stepup-backend-0he9.onrender.com").rstrip("/")
     profile_pic = profile.get("profile_picture", "")
     if profile_pic and not profile_pic.startswith("http"):
         profile_pic = f"{backend_url}{profile_pic}"

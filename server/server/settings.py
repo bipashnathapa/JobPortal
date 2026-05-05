@@ -178,7 +178,10 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 
 # eSewa CV lifetime payment
 CV_ANALYSIS_PRICE_NPR = int(os.environ.get("CV_ANALYSIS_PRICE_NPR", "20"))
-BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "http://127.0.0.1:8000")
+BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "").rstrip("/")
+if not BACKEND_PUBLIC_URL:
+    BACKEND_PUBLIC_URL = "http://127.0.0.1:8000"
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 ESEWA_MERCHANT_CODE = os.environ.get("ESEWA_MERCHANT_CODE", "EPAYTEST")
 ESEWA_SECRET_KEY = os.environ.get("ESEWA_SECRET_KEY", "8gBm/:&EnhH.1/q")
