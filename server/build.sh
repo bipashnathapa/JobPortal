@@ -3,7 +3,7 @@
 set -o errexit
 
 # 1. Install all backend dependencies (no requirements.txt needed!)
-pip install django djangorestframework django-cors-headers pymongo dnspython python-dotenv whitenoise pyjwt spacy pypdf requests gunicorn
+pip install django djangorestframework django-cors-headers pymongo dnspython python-dotenv whitenoise pyjwt spacy pypdf requests gunicorn django-cloudinary-storage cloudinary
 
 # 2. Download the English NLP model for the Resume Scorer
 python -m spacy download en_core_web_sm
