@@ -123,7 +123,7 @@ def register(request):
         "password": hashed_pw,
         "role": role,
         "email": email,
-        "is_verified": False,
+        "is_verified": True, # Auto-verify because Render blocks SMTP
         "profile": profile
     })
 
@@ -511,7 +511,7 @@ def update_profile(request):
         
         # Save the file
         path = default_storage.save(filename, ContentFile(profile_picture.read()))
-        profile_picture_path = f"/media/{path}"
+        profile_picture_path = default_storage.url(path)
 
     # Update profile with all fields
     updated_profile = {
@@ -685,7 +685,7 @@ def update_employer_profile(request):
         
         # Save the file
         path = default_storage.save(filename, ContentFile(profile_picture.read()))
-        profile_picture_path = f"/media/{path}"
+        profile_picture_path = default_storage.url(path)
 
     # Update profile with all fields
     updated_profile = {
@@ -1086,7 +1086,7 @@ def submit_application(request, listing_id):
         ext = cv_file.name.split('.')[-1]
         filename = f"cvs/{user['username']}_{listing_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
         path = default_storage.save(filename, ContentFile(cv_file.read()))
-        cv_path = f"/media/{path}"
+        cv_path = default_storage.url(path)
     else:
         return Response({"error": "CV is required"}, status=400)
 
