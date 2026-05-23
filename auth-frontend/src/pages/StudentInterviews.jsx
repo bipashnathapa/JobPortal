@@ -8,6 +8,8 @@ export default function StudentInterviews() {
   const navigate = useNavigate();
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submittingId, setSubmittingId] = useState(null);
+  const [submittingType, setSubmittingType] = useState(null);
 
   useEffect(() => {
     fetchInterviews();
@@ -28,6 +30,9 @@ export default function StudentInterviews() {
   };
 
   const handleAction = async (interviewId, action) => {
+    if (submittingId) return;
+    setSubmittingId(interviewId);
+    setSubmittingType(action);
     try {
       const res = await fetchWithAuth(`/interviews/${interviewId}/${action}/`, {
         method: "POST",
@@ -37,11 +42,14 @@ export default function StudentInterviews() {
         toast.error(data.error);
         return;
       }
-      toast.success(`Interview ${action}ed successfully`);
-      fetchInterviews();
+      toast.success(`Interview ${action === "confirm" ? "confirmed" : "declined"} successfully`);
+      await fetchInterviews();
     } catch (err) {
       console.error(err);
       toast.error("Failed to update interview status");
+    } finally {
+      setSubmittingId(null);
+      setSubmittingType(null);
     }
   };
 
@@ -77,8 +85,23 @@ export default function StudentInterviews() {
                 <p className="status-line">Status: {interview.status}</p>
                 {interview.status === "proposed" && (
                   <div className="actions-row">
-                    <button onClick={() => handleAction(interview._id, "confirm")}>Confirm</button>
-                    <button className="decline" onClick={() => handleAction(interview._id, "decline")}>Decline</button>
+                    <button
+                      disabled={submittingId === interview._id}
+                      onClick={() => handleAction(interview._id, "confirm")}
+                    >
+                      {submittingId === interview._id && submittingType === "confirm"
+                        ? "Confirming..."
+                        : "Confirm"}
+                    </button>
+                    <button
+                      className="decline"
+                      disabled={submittingId === interview._id}
+                      onClick={() => handleAction(interview._id, "decline")}
+                    >
+                      {submittingId === interview._id && submittingType === "decline"
+                        ? "Declining..."
+                        : "Decline"}
+                    </button>
                   </div>
                 )}
               </article>

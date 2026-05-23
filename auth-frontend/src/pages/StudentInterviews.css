@@ -62,3 +62,8 @@
 .actions-row button.decline {
   background: #842029;
 }
+
+.actions-row button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
