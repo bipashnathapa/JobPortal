@@ -31,6 +31,7 @@ from .session_tokens import (
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+import cloudinary.uploader
 import hashlib
 import jwt
 from datetime import datetime, timedelta
@@ -351,6 +352,7 @@ def cv_payment_status(request):
         }
     )
 
+#Payment
 
 @api_view(["POST"])
 def esewa_cv_init(request):
@@ -367,7 +369,7 @@ def esewa_cv_init(request):
     secret = getattr(settings, "ESEWA_SECRET_KEY", "")
     txn = str(uuid.uuid4())
 
-    pending_esewa_collection.insert_one(
+    pending_esewa_collection.insert_one(  # Query
         {
             "transaction_uuid": txn,
             "username": user["username"],
@@ -402,6 +404,7 @@ def esewa_cv_init(request):
         }
     )
 
+#Payment success 
 
 def esewa_success(request):
     data_b64 = request.GET.get("data") or ""
@@ -417,15 +420,15 @@ def esewa_success(request):
         return HttpResponseRedirect(f"{frontend}/cv-feedback?payment=invalid")
 
     txn = str(payload.get("transaction_uuid") or "")
-    pending = pending_esewa_collection.find_one({"transaction_uuid": txn})
+    pending = pending_esewa_collection.find_one({"transaction_uuid": txn})  # Query
     if not pending:
         return HttpResponseRedirect(f"{frontend}/cv-feedback?payment=unknown")
 
-    users_collection.update_one(
+    users_collection.update_one(  # Query
         {"username": pending["username"], "role": "student"},
         {"$inc": {"cv_analysis_credits": 1}},
     )
-    pending_esewa_collection.delete_one({"transaction_uuid": txn})
+    pending_esewa_collection.delete_one({"transaction_uuid": txn})  # Query
     return HttpResponseRedirect(f"{frontend}/cv-feedback?payment=success")
 
 
@@ -457,9 +460,9 @@ def get_profile(request):
     backend_url = getattr(settings, "BACKEND_PUBLIC_URL", "https://stepup-backend-0he9.onrender.com")
     profile_pic = profile.get("profile_picture", "")
     
-    # Only prepend if it's a relative path and doesn't already have a domain
+    
     if profile_pic and not profile_pic.startswith("http"):
-        # Ensure we don't double-slash
+        
         if not profile_pic.startswith("/"):
             profile_pic = f"/{profile_pic}"
         profile_pic = f"{backend_url}{profile_pic}"
@@ -475,6 +478,7 @@ def get_profile(request):
         }
     })
 
+#Profile update 
 
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])
@@ -922,6 +926,8 @@ def get_all_listings(request):
     
     return Response({"listings": listings})
 
+
+#Save Job
 @api_view(["POST"])
 def save_job(request, listing_id):
     """Save a listing for the logged-in student"""
@@ -1082,11 +1088,16 @@ def submit_application(request, listing_id):
         if cv_file.size > 5 * 1024 * 1024:
             return Response({"error": "CV file size must be less than 5MB"}, status=400)
         
-        # Save CV
-        ext = cv_file.name.split('.')[-1]
-        filename = f"cvs/{user['username']}_{listing_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
-        path = default_storage.save(filename, ContentFile(cv_file.read()))
-        cv_path = default_storage.url(path)
+        # Save CV directly via Cloudinary SDK with resource_type='raw'
+        # (PDFs must NOT be uploaded as 'image'; default_storage uses 'image' by default)
+        public_id = f"cvs/{user['username']}_{listing_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        upload_result = cloudinary.uploader.upload(
+            cv_file.read(),
+            public_id=public_id,
+            resource_type="raw",
+            overwrite=True,
+        )
+        cv_path = upload_result.get("secure_url", "")
     else:
         return Response({"error": "CV is required"}, status=400)
 
